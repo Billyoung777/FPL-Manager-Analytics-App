@@ -1,0 +1,44 @@
+{
+    "manager_id": 1053858,
+    "gameweeks": [
+        {
+            "gameweek": 1,
+            "points": 55,
+            "total_points": 55,
+            "overall_rank": 2935782,
+            "transfers": 0,
+            "transfer_cost": 0,
+            "bench_points": 9,
+            "captain": "Haaland",
+            "captain_raw_points": 2,
+            "captain_contribution": 4,
+            "chip": null
+        },
+        {
+            "gameweek": 2,
+            "points": 68,
+            "total_points": 123,
+            "overall_rank": 5574442,
+            "transfers": 0,
+            "transfer_cost": 0,
+            "bench_points": 1,
+            "captain": "Haaland",
+            "captain_raw_points": 13,
+            "captain_contribution": 26,
+            "chip": null
+        },
+        {
+            "gameweek": 3,
+            "points": 41,
+            "total_points": 164,
+            "overall_rank": 6693471,
+            "transfers": 15,
+            "transfer_cost": 0,
+            "bench_points": 9,
+            "captain": "Haaland",
+            "captain_raw_points": 9,
+            "captain_contribution": 18,
+            "chip": "wildcard"
+        }
+    ]
+}
