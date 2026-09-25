@@ -1,4 +1,5 @@
 from api.fpl_client import FPLClient
+from tracker.squad_tracker import SquadTracker
 
 
 class PlayerPerformanceTracker:
@@ -89,7 +90,7 @@ class PlayerPerformanceTracker:
                 bench_points += performance["points"]
 
         return bench_points
-    
+##function to calculate the manager score based on starting points and captain bonus  
     def calculate_manager_score(self, starting_points, captain_bonus):
         return starting_points + captain_bonus
 
@@ -134,3 +135,24 @@ class PlayerPerformanceTracker:
             "captain_bonus": captain_bonus,
             "manager_score": manager_score,
         }
+
+##GameweekAnalyzer function to analyze multiple gameweeks for a manager
+    def analyze_gameweeks(self, manager_id, start_gameweek, end_gameweek):
+        results = []
+
+        for gameweek in range(start_gameweek, end_gameweek + 1):
+            squad_tracker = SquadTracker()
+
+            squad = squad_tracker.get_gameweek_squad(
+                manager_id,
+                gameweek
+            )
+
+            analysis = self.analyze_gameweek(
+                squad,
+                gameweek
+            )
+
+            results.append(analysis)
+
+        return results

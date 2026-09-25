@@ -115,3 +115,22 @@ print("Bench Points:", gameweek_analysis["bench_points"])
 print("Captain Points:", gameweek_analysis["captain_points"])
 print("Captain Bonus:", gameweek_analysis["captain_bonus"])
 print("Manager Score:", gameweek_analysis["manager_score"])
+
+##function to analyze multiple gameweeks for a manager
+multi_gameweek_analysis = tracker.analyze_gameweeks(
+    1053858,
+    1,
+    5
+)
+
+print("\nMulti-Gameweek Analysis:")
+
+for analysis in multi_gameweek_analysis:
+    print(
+        f"GW{analysis['gameweek']} | "
+        f"Raw: {analysis['total_squad_points']} | "
+        f"Starting: {analysis['starting_points']} | "
+        f"Bench: {analysis['bench_points']} | "
+        f"Captain: {analysis['captain_points']} | "
+        f"Score: {analysis['manager_score']}"
+    )
