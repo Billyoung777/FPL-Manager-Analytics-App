@@ -5,6 +5,7 @@ from tracker.squad_tracker import SquadTracker
 class PlayerPerformanceTracker:
     def __init__(self, client=None):
         self.client = client or FPLClient()
+        self.player_history_cache = {}
 
     def get_player_gameweek_performance(self, player_id, gameweek):
         player_data = self.client.get_player_history(player_id)

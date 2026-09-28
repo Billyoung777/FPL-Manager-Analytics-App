@@ -50,3 +50,20 @@ class FPLClient:
 # Gameweek player stats for a specific gameweek (Player ID, Gameweek, Points, Goals, Assists, Clean Sheets, etc.)
     def get_player_history(self, player_id):
         return self.get(f"element-summary/{player_id}/")
+
+# This method retrieves the latest finished gameweek by checking the "finished" status of each event in the FPL API's events data. It returns the ID of the most recent finished gameweek or None if no finished gameweeks are found.
+    def get_latest_finished_gameweek(self):
+        data = self.get_players()
+
+        events = data["events"]
+
+        finished_gameweeks = []
+
+        for event in events:
+            if event["finished"]:
+                finished_gameweeks.append(event["id"])
+
+        if not finished_gameweeks:
+            return None
+
+        return max(finished_gameweeks)
