@@ -4,11 +4,20 @@ from tracker.squad_tracker import SquadTracker
 
 class PlayerPerformanceTracker:
     def __init__(self, client=None):
+        
         self.client = client or FPLClient()
         self.player_history_cache = {}
 
+    def get_cached_player_history(self, player_id):
+        if player_id not in self.player_history_cache:
+            self.player_history_cache[player_id] = (
+                self.client.get_player_history(player_id)
+            )
+
+        return self.player_history_cache[player_id]
+
     def get_player_gameweek_performance(self, player_id, gameweek):
-        player_data = self.client.get_player_history(player_id)
+        player_data = self.get_cached_player_history(player_id)
 
         history = player_data["history"]
 
@@ -91,7 +100,7 @@ class PlayerPerformanceTracker:
                 bench_points += performance["points"]
 
         return bench_points
-##function to calculate the manager score based on starting points and captain bonus  
+#function to calculate the manager score based on starting points and captain bonus  
     def calculate_manager_score(self, starting_points, captain_bonus):
         return starting_points + captain_bonus
 

@@ -67,3 +67,13 @@ class FPLClient:
             return None
 
         return max(finished_gameweeks)
+
+# This method retrieves the chips used by a manager by calling the get_manager_history method and returning the "chips" data from the manager's history.
+    def get_manager_chips(self, manager_id):
+        history = self.get_manager_history(manager_id)
+
+        return history["chips"]
+
+# This method retrieves the transfers made by a manager by calling the get_manager_transfers method and returning the transfer data for the specified manager ID.
+    def get_manager_transfers(self, manager_id):
+        return self.get(f"entry/{manager_id}/transfers/")
