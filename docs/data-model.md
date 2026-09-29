@@ -200,3 +200,24 @@ This data model should support future calculations including:
 - Chip impact
 - Manager performance trends
 - Mini-league comparisons
+
+## Future Scoring Engine Improvements
+
+The current scoring engine has been validated successfully against completed
+gameweeks, but the following FPL scoring behaviours should be supported before
+the system is considered fully general-purpose:
+
+- Automatic substitutions
+- Formation validation after substitutions
+- Goalkeeper auto-substitution
+- Vice-captain fallback when captain does not play
+- Player pick multipliers
+- Triple Captain multiplier
+- Bench Boost scoring
+- Transfer point deductions
+- Official transfer cost (`event_transfers_cost`)
+- Official bench points (`points_on_bench`)
+
+These features were identified during the migration from the original
+prototype scripts and should be implemented inside the new modular
+architecture rather than retained as standalone legacy scripts.
