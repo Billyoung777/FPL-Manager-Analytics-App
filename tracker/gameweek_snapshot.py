@@ -21,10 +21,6 @@ class GameweekSnapshot:
             manager_id,
             gameweek
         )
-        squad_changes = self.squad_tracker.get_squad_changes(
-            manager_id,
-            gameweek
-        )
 #this method retrieves the performances of the squad for a specific gameweek using the PlayerPerformanceTracker. It also analyzes the gameweek using the same tracker. Additionally, it retrieves the manager's history and chip usage for the specified gameweek using the FPLClient. Finally, it returns a dictionary containing all the relevant data.
         performances = self.performance_tracker.get_squad_performance(
             squad,
@@ -92,7 +88,24 @@ class GameweekSnapshot:
                 "player_out_cost": transfer["element_out_cost"],
                 "player_in_cost": transfer["element_in_cost"],
             })
+        
+        squad_changes = self.squad_tracker.get_squad_changes(
+            manager_id,
+            gameweek
+        )
 
+#This method retrieves the official metrics for a specific gameweek from the manager's history. It checks if the gameweek history is available and extracts relevant metrics such as points, total points, overall rank, event transfers, event transfers cost, and points on the bench. If the gameweek history is not found, it sets the official metrics to None. Finally, it returns a dictionary containing the manager ID, gameweek, squad, performances, analysis, official gameweek data, chip information, transfer details, squad changes, and official metrics.
+        official_metrics = None
+
+        if gameweek_history:
+            official_metrics = {
+                "points": gameweek_history["points"],
+                "total_points": gameweek_history["total_points"],
+                "overall_rank": gameweek_history["overall_rank"],
+                "event_transfers": gameweek_history["event_transfers"],
+                "event_transfers_cost": gameweek_history["event_transfers_cost"],
+                "points_on_bench": gameweek_history["points_on_bench"],
+            }
 #This method returns a dictionary containing the manager ID, gameweek, squad, performances, analysis, official gameweek data, and chip information. It provides a comprehensive snapshot of a manager's performance and squad for a specific gameweek.
         return {
             "manager_id": manager_id,
@@ -104,5 +117,6 @@ class GameweekSnapshot:
             "chip": gameweek_chip,
             "transfers": transfer_details,
             "squad_changes": squad_changes,
+            "official_metrics": official_metrics,
         }
 

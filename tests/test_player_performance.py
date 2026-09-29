@@ -18,7 +18,6 @@ print("=" * 60)
 print(f"Manager ID: {MANAGER_ID}")
 print(f"Latest Finished Gameweek: GW{latest_finished_gameweek}")
 
-
 # Analyze every completed gameweek
 multi_gameweek_analysis = tracker.analyze_gameweeks(
     MANAGER_ID,
@@ -37,9 +36,9 @@ for analysis in multi_gameweek_analysis:
         f"Starting: {analysis['starting_points']} | "
         f"Bench: {analysis['bench_points']} | "
         f"Captain: {analysis['captain_points']} | "
-        f"Score: {analysis['manager_score']}"
+        f"Score: {analysis['manager_score']} | "
+        f"Multiplier Score: {analysis['multiplier_score']}"
     )
-
 print("=" * 60)
 print("ANALYSIS COMPLETE")
 print("=" * 60)

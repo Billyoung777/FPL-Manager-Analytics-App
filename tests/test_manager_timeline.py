@@ -20,6 +20,7 @@ print("=" * 70)
 print(f"Manager ID: {MANAGER_ID}")
 print(f"Gameweeks Found: {len(timeline)}")
 
+#The following section prints a summary of the manager's season, including total gameweeks, total points, average points, highest and lowest gameweek scores, total players in and out, and chips used.
 print("\n" + "-" * 70)
 print("SEASON TIMELINE")
 print("-" * 70)
@@ -28,27 +29,27 @@ for snapshot in timeline:
     gameweek = snapshot["gameweek"]
     analysis = snapshot["analysis"]
     official = snapshot["official"]
+    official_metrics = snapshot["official_metrics"]
     chip = snapshot["chip"]
     squad_changes = snapshot["squad_changes"]
 
-    chip_name = chip["name"] if chip else "None"
+    if chip:
+        chip_name = chip["name"]
+    else:
+        chip_name = "None"
 
-    players_in = len(squad_changes["players_in"])
-    players_out = len(squad_changes["players_out"])
-
-    official_points = (
-        official["points"]
-        if official
-        else "N/A"
-    )
+    transfer_cost = official_metrics["event_transfers_cost"]
+    bench_points = official_metrics["points_on_bench"]
 
     print(
         f"GW{gameweek} | "
         f"Score: {analysis['manager_score']} | "
-        f"Official: {official_points} | "
+        f"Official: {official['points']} | "
+        f"Transfer Cost: {transfer_cost} | "
+        f"Bench: {bench_points} | "
         f"Chip: {chip_name} | "
-        f"IN: {players_in} | "
-        f"OUT: {players_out}"
+        f"IN: {len(squad_changes['players_in'])} | "
+        f"OUT: {len(squad_changes['players_out'])}"
     )
 
 #The following section prints a summary of the manager's season, including total gameweeks, total points, average points, highest and lowest gameweek scores, total players in and out, and chips used.

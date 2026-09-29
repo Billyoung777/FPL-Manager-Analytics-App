@@ -55,6 +55,8 @@ class PlayerPerformanceTracker:
                 performance["player_name"] = player["player_name"]
                 performance["position_name"] = player["position_name"]
                 performance["is_starting"] = player["multiplier"] > 0
+                performance["multiplier"] = player["multiplier"]
+                performance["squad_position"] = player["position"]
 
                 performances.append(performance)
 
@@ -100,6 +102,17 @@ class PlayerPerformanceTracker:
                 bench_points += performance["points"]
 
         return bench_points
+#function to calculate the total points for a squad based on the performances of each player, taking into account their points and multipliers (e.g., captaincy).
+    def calculate_multiplier_score(self, performances):
+        total_points = 0
+
+        for performance in performances:
+            total_points += (
+                performance["points"]
+                * performance["multiplier"]
+            )
+
+        return total_points
 #function to calculate the manager score based on starting points and captain bonus  
     def calculate_manager_score(self, starting_points, captain_bonus):
         return starting_points + captain_bonus
@@ -135,6 +148,9 @@ class PlayerPerformanceTracker:
             starting_points,
             captain_bonus
         )
+        multiplier_score = self.calculate_multiplier_score(
+            performances
+        )
 
         return {
             "gameweek": gameweek,
@@ -144,15 +160,16 @@ class PlayerPerformanceTracker:
             "captain_points": captain_points,
             "captain_bonus": captain_bonus,
             "manager_score": manager_score,
+            "multiplier_score": multiplier_score,
         }
 
 ##GameweekAnalyzer function to analyze multiple gameweeks for a manager
     def analyze_gameweeks(self, manager_id, start_gameweek, end_gameweek):
         results = []
 
-        for gameweek in range(start_gameweek, end_gameweek + 1):
-            squad_tracker = SquadTracker()
+        squad_tracker = SquadTracker(self.client)
 
+        for gameweek in range(start_gameweek, end_gameweek + 1):
             squad = squad_tracker.get_gameweek_squad(
                 manager_id,
                 gameweek

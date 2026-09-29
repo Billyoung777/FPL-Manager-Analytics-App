@@ -2,7 +2,7 @@ from tracker.gameweek_snapshot import GameweekSnapshot
 
 
 MANAGER_ID = 1053858
-GAMEWEEK = 3
+GAMEWEEK = 5
 
 snapshot_tracker = GameweekSnapshot()
 
@@ -125,6 +125,21 @@ if official:
         print("Score Validation: FAIL")
 else:
     print("No official gameweek data found.")
+
+# Additional Official FPL data
+print(
+    f"Transfer Cost: "
+    f"{snapshot['official_metrics']['event_transfers_cost']}"
+)
+
+print(
+    f"Official Bench Points: "
+    f"{snapshot['official_metrics']['points_on_bench']}"
+)
+print(
+    f"Official Transfers: "
+    f"{snapshot['official_metrics']['event_transfers']}"
+)
 
 
 print("=" * 60)
