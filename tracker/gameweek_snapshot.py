@@ -21,6 +21,10 @@ class GameweekSnapshot:
             manager_id,
             gameweek
         )
+        squad_changes = self.squad_tracker.get_squad_changes(
+            manager_id,
+            gameweek
+        )
 #this method retrieves the performances of the squad for a specific gameweek using the PlayerPerformanceTracker. It also analyzes the gameweek using the same tracker. Additionally, it retrieves the manager's history and chip usage for the specified gameweek using the FPLClient. Finally, it returns a dictionary containing all the relevant data.
         performances = self.performance_tracker.get_squad_performance(
             squad,
@@ -99,5 +103,6 @@ class GameweekSnapshot:
             "official": gameweek_history,
             "chip": gameweek_chip,
             "transfers": transfer_details,
+            "squad_changes": squad_changes,
         }
 

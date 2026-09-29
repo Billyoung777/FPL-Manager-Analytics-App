@@ -11,56 +11,70 @@ snapshot = snapshot_tracker.get_snapshot(
     GAMEWEEK
 )
 
-print("=" * 60)
-print("MANAGER GAMEWEEK SNAPSHOT")
-print("=" * 60)
-
-print("Manager ID:", snapshot["manager_id"])
-print("Gameweek:", snapshot["gameweek"])
-
 analysis = snapshot["analysis"]
 performances = snapshot["performances"]
 official = snapshot["official"]
 chip = snapshot["chip"]
 transfers = snapshot["transfers"]
+squad_changes = snapshot["squad_changes"]
 
-print("\nOfficial FPL Data:")
 
-#This section prints the official FPL data for the specified gameweek, including points scored, total points, and overall rank. If no official gameweek data is found, it prints a message indicating that.
-if official:
-    print("Official Points:", official["points"])
-    print("Total Points:", official["total_points"])
-    print("Overall Rank:", official["overall_rank"])
-else:
-    print("No official gameweek data found.")
+print("=" * 60)
+print("MANAGER GAMEWEEK SNAPSHOT")
+print("=" * 60)
 
-if official:
-    if analysis["manager_score"] == official["points"]:
-        print("Score Validation: PASS")
-    else:
-        print("Score Validation: FAIL")
+print(f"Manager ID: {MANAGER_ID}")
+print(f"Gameweek: {GAMEWEEK}")
 
+
+# Chip
 print("\nChip:")
-
-#This section prints the chip used by a manager for the specified gameweek. If a chip was used, it prints the name of the chip; otherwise, it prints "None" to indicate that no chip was used during that gameweek.
 if chip:
     print(chip["name"])
 else:
     print("None")
 
-#This section prints the starting XI and bench players along with their positions and points scored in the specified gameweek. It also prints the total points for the starting XI, bench, captain, and the manager's overall score for that gameweek.
+
+# Transfers
+print("\nTransfers:")
+print(f"Transfers Found: {len(transfers)}")
+
+if transfers:
+    for transfer in transfers:
+        print(
+            f"{transfer['player_out']} -> "
+            f"{transfer['player_in']}"
+        )
+else:
+    print("None")
+
+# Squad Changes
+print("\nNet Squad Changes:")
+
+print("Players Out:")
+if squad_changes["players_out"]:
+    for player in squad_changes["players_out"]:
+        print(
+            f"- {player['player_name']} | "
+            f"{player['position']}"
+        )
+else:
+    print("- None")
+
+print("\nPlayers In:")
+if squad_changes["players_in"]:
+    for player in squad_changes["players_in"]:
+        print(
+            f"- {player['player_name']} | "
+            f"{player['position']}"
+        )
+else:
+    print("- None")
+
+
+# Starting XI
 print("\nStarting XI:")
-print("\nTransfers:")
-print("\nTransfers:")
-print("Transfers Found:", len(transfers))
 
-for transfer in transfers:
-    print(
-        f"{transfer['player_out']} -> "
-        f"{transfer['player_in']}"
-    )
-
-#This section prints the starting XI and bench players along with their positions and points scored in the specified gameweek. It also prints the total points for the starting XI, bench, captain, and the manager's overall score for that gameweek.
 for player in performances:
     if player["is_starting"]:
         print(
@@ -69,10 +83,10 @@ for player in performances:
             f"{player['points']} pts"
         )
 
-print("\n")
+
+# Bench
 print("\nBench:")
 
-#This section prints the bench players along with their positions and points scored in the specified gameweek. It also prints the total points for the starting XI, bench, captain, and the manager's overall score for that gameweek.
 for player in performances:
     if not player["is_starting"]:
         print(
@@ -81,9 +95,38 @@ for player in performances:
             f"{player['points']} pts"
         )
 
+
+# Calculated analysis
+print("\n" + "-" * 60)
+print("GAMEWEEK ANALYSIS")
+print("-" * 60)
+
+print("Raw Squad Points:", analysis["total_squad_points"])
 print("Starting XI Points:", analysis["starting_points"])
 print("Bench Points:", analysis["bench_points"])
 print("Captain Points:", analysis["captain_points"])
-print("Manager Score:", analysis["manager_score"])
+print("Captain Bonus:", analysis["captain_bonus"])
+print("Calculated Manager Score:", analysis["manager_score"])
 
+
+# Official FPL data
+print("\n" + "-" * 60)
+print("OFFICIAL FPL DATA")
+print("-" * 60)
+
+if official:
+    print("Official GW Points:", official["points"])
+    print("Total Points:", official["total_points"])
+    print("Overall Rank:", official["overall_rank"])
+
+    if analysis["manager_score"] == official["points"]:
+        print("Score Validation: PASS")
+    else:
+        print("Score Validation: FAIL")
+else:
+    print("No official gameweek data found.")
+
+
+print("=" * 60)
+print("SNAPSHOT COMPLETE")
 print("=" * 60)
