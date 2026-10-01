@@ -66,6 +66,10 @@ class SquadTracker:
             "bench": bench,
             "captain": captain,
             "vice_captain": vice_captain,
+            "automatic_subs": picks_data.get(
+                "automatic_subs",
+                []
+            ),
         }
 #This method retrieves the squad of a manager for a specific gameweek using the FPLClient. It fetches the manager's picks and player data, constructs a lookup for player names and positions, and categorizes players into starting XI and bench. It also identifies the captain and vice-captain. Finally, it returns a dictionary containing the gameweek, starting XI, bench, captain, and vice-captain information.
     def get_historical_squads(self, manager_id, last_gameweek):
@@ -145,4 +149,58 @@ class SquadTracker:
         return {
             "players_out": players_out,
             "players_in": players_in,
+        }
+
+# This method reconstructs the original squad before any automatic substitutions were made. It takes the current squad, which may have undergone automatic substitutions, and reverses those changes to return the original starting XI and bench. It iterates through the list of automatic substitutions, swapping players in and out of the starting XI and bench accordingly. The method returns a dictionary containing the reconstructed starting XI, bench, and the list of automatic substitutions.
+    def reconstruct_pre_auto_sub_squad(self, squad):
+        original_starting_xi = [
+            player.copy()
+            for player in squad["starting_xi"]
+        ]
+
+        original_bench = [
+            player.copy()
+            for player in squad["bench"]
+        ]
+
+        automatic_subs = squad.get(
+            "automatic_subs",
+            []
+        )
+
+        for auto_sub in automatic_subs:
+            player_in_id = auto_sub["element_in"]
+            player_out_id = auto_sub["element_out"]
+
+            player_in = next(
+                (
+                    player
+                    for player in original_starting_xi
+                    if player["element"] == player_in_id
+                ),
+                None
+            )
+
+            player_out = next(
+                (
+                    player
+                    for player in original_bench
+                    if player["element"] == player_out_id
+                ),
+                None
+            )
+
+            if player_in is None or player_out is None:
+                continue
+
+            original_starting_xi.remove(player_in)
+            original_bench.remove(player_out)
+
+            original_starting_xi.append(player_out)
+            original_bench.append(player_in)
+
+        return {
+            "starting_xi": original_starting_xi,
+            "bench": original_bench,
+            "automatic_subs": automatic_subs,
         }
