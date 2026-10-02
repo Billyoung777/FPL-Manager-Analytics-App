@@ -89,4 +89,5 @@ for player in original_gw5["bench"]:
     print(
         f"- {player['player_name']} "
         f"(ID {player['element']})"
+        
     )
