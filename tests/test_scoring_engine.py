@@ -599,6 +599,40 @@ print(
     f"{len(auto_sub_result['final_xi'])}"
 )
 
+print("\nOFFICIAL AUTO-SUB COMPARISON TEST")
+print("-" * 60)
+
+predicted_substitutions = [
+    {
+        "player_out": {
+            "player_id": 165,
+            "player_name": "João Pedro",
+        },
+        "player_in": {
+            "player_id": 124,
+            "player_name": "Groß",
+        },
+    }
+]
+
+official_substitutions = [
+    {
+        "entry": 1053858,
+        "element_in": 124,
+        "element_out": 165,
+        "event": 5,
+    }
+]
+
+comparison = engine.compare_auto_substitutions(
+    predicted_substitutions,
+    official_substitutions
+)
+
+print(f"Predicted: {comparison['predicted']}")
+print(f"Official:  {comparison['official']}")
+print(f"Match:     {comparison['matches']}")
+
 print("=" * 60)
 print("SCORING ENGINE TEST COMPLETE")
 print("=" * 60)

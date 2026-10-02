@@ -89,5 +89,27 @@ for player in original_gw5["bench"]:
     print(
         f"- {player['player_name']} "
         f"(ID {player['element']})"
-        
+
     )
+
+
+print("\nGW5 RECONSTRUCTION STATUS")
+print("-" * 60)
+
+for player in original_gw5["starting_xi"]:
+    if player["element"] == 165:
+        print(
+            f"{player['player_name']} | "
+            f"Original: {player.get('original_selection')} | "
+            f"Original position known: "
+            f"{player.get('original_position_known')}"
+        )
+
+for player in original_gw5["bench"]:
+    if player["element"] == 124:
+        print(
+            f"{player['player_name']} | "
+            f"Original: {player.get('original_selection')} | "
+            f"Original position known: "
+            f"{player.get('original_position_known')}"
+        )

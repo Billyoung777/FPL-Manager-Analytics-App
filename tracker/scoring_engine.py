@@ -287,3 +287,30 @@ class ScoringEngine:
                 updated_starting_players
             ),
         }
+
+    def compare_auto_substitutions(
+        self,
+        predicted_substitutions,
+        official_substitutions
+    ):
+        predicted_pairs = {
+            (
+                substitution["player_out"]["player_id"],
+                substitution["player_in"]["player_id"],
+            )
+            for substitution in predicted_substitutions
+        }
+
+        official_pairs = {
+            (
+                substitution["element_out"],
+                substitution["element_in"],
+            )
+            for substitution in official_substitutions
+        }
+
+        return {
+            "predicted": predicted_pairs,
+            "official": official_pairs,
+            "matches": predicted_pairs == official_pairs,
+        }

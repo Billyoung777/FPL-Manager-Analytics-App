@@ -196,6 +196,12 @@ class SquadTracker:
             original_starting_xi.remove(player_in)
             original_bench.remove(player_out)
 
+            player_out["original_selection"] = "starting"
+            player_in["original_selection"] = "bench"
+
+            player_out["original_position_known"] = False
+            player_in["original_position_known"] = False
+
             original_starting_xi.append(player_out)
             original_bench.append(player_in)
 

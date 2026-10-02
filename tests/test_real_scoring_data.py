@@ -137,3 +137,61 @@ for auto_sub in raw_picks["automatic_subs"]:
         f"IN:  {player_in} "
         f"(ID {auto_sub['element_in']})"
     )
+
+print("\nGW5 PICKS RESPONSE KEYS")
+print("-" * 90)
+
+for key in raw_picks.keys():
+    print(key)
+
+print("\nGW5 PICKS METADATA")
+print("-" * 90)
+
+for key, value in raw_picks.items():
+    if key != "picks":
+        print(f"{key}: {value}")
+
+
+print("\nGW5 AUTO-SUB VALIDATION SUMMARY")
+print("-" * 90)
+
+official_auto_subs = raw_picks.get(
+    "automatic_subs",
+    []
+)
+
+for auto_sub in official_auto_subs:
+    player_out = player_lookup.get(
+        auto_sub["element_out"],
+        "Unknown"
+    )
+
+    player_in = player_lookup.get(
+        auto_sub["element_in"],
+        "Unknown"
+    )
+
+    print(
+        f"Official FPL: {player_out} -> {player_in}"
+    )
+
+print(
+    "Original XI membership reconstructed: YES"
+)
+
+print(
+    "Original bench membership reconstructed: YES"
+)
+
+print(
+    "Original bench priority available: NO"
+)
+
+print(
+    "Independent engine replay possible: NO"
+)
+
+print(
+    "Reason: finalized historical picks do not preserve "
+    "the original bench order."
+)
