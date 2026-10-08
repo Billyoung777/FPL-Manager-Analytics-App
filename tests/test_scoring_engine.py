@@ -636,3 +636,799 @@ print(f"Match:     {comparison['matches']}")
 print("=" * 60)
 print("SCORING ENGINE TEST COMPLETE")
 print("=" * 60)
+
+
+print("\nBENCH PRIORITY REGRESSION TEST")
+print("-" * 60)
+
+def make_player(pid, name, position, minutes, starting, slot):
+    return {
+        "player_id": pid,
+        "player_name": name,
+        "position_name": position,
+        "minutes": minutes,
+        "is_starting": starting,
+        "squad_position": slot,
+    }
+
+# Original 3-4-3 starting XI
+xi = [
+    make_player(1, "GK", "Goalkeeper", 90, True, 1),
+    make_player(2, "DEF 1", "Defender", 0, True, 2),
+    make_player(3, "DEF 2", "Defender", 90, True, 3),
+    make_player(4, "DEF 3", "Defender", 90, True, 4),
+    make_player(5, "MID 1", "Midfielder", 0, True, 5),
+    make_player(6, "MID 2", "Midfielder", 90, True, 6),
+    make_player(7, "MID 3", "Midfielder", 90, True, 7),
+    make_player(8, "MID 4", "Midfielder", 90, True, 8),
+    make_player(9, "FWD 1", "Forward", 90, True, 9),
+    make_player(10, "FWD 2", "Forward", 90, True, 10),
+    make_player(11, "FWD 3", "Forward", 90, True, 11),
+]
+
+bench = [
+    make_player(12, "Bench GK", "Goalkeeper", 90, False, 12),
+    make_player(13, "Bench MID", "Midfielder", 90, False, 13),
+    make_player(14, "Bench DEF", "Defender", 90, False, 14),
+    make_player(15, "Bench FWD", "Forward", 90, False, 15),
+]
+
+result = engine.apply_auto_substitutions(xi + bench)
+
+for sub in result["substitutions"]:
+    print(
+        sub["player_out"]["player_name"],
+        "->",
+        sub["player_in"]["player_name"]
+    )
+
+print("Formation valid:", result["formation_valid"])
+
+print("\nCOMPETING SUBSTITUTES TEST")
+print("-" * 60)
+
+# Reuse the previous 3-4-3 XI.
+# DEF 1 and MID 1 did not play.
+#
+# Bench MID is first priority.
+# Bench DEF is second priority.
+# Bench FWD is third priority.
+#
+# Make the bench defender unavailable.
+
+competing_xi = [player.copy() for player in xi]
+competing_bench = [player.copy() for player in bench]
+
+for player in competing_bench:
+    if player["player_name"] == "Bench DEF":
+        player["minutes"] = 0
+
+competing_result = engine.apply_auto_substitutions(
+    competing_xi + competing_bench
+)
+
+for sub in competing_result["substitutions"]:
+    print(
+        sub["player_out"]["player_name"],
+        "->",
+        sub["player_in"]["player_name"]
+    )
+
+print(
+    "Number of substitutions:",
+    len(competing_result["substitutions"])
+)
+print(
+    "Final XI size:",
+    len(competing_result["final_xi"])
+)
+print(
+    "Formation valid:",
+    competing_result["formation_valid"]
+)
+
+
+print("\nBENCH PRIORITY CONFLICT TEST")
+print("-" * 60)
+
+# Original formation: 4-4-2
+# Missing starters: one defender, one midfielder
+# First bench player: midfielder
+# Second bench player: defender
+# Third bench player: forward
+
+conflict_xi = [
+    make_player(101, "GK", "Goalkeeper", 90, True, 1),
+    make_player(102, "DEF 1", "Defender", 0, True, 2),
+    make_player(103, "DEF 2", "Defender", 90, True, 3),
+    make_player(104, "DEF 3", "Defender", 90, True, 4),
+    make_player(105, "DEF 4", "Defender", 90, True, 5),
+    make_player(106, "MID 1", "Midfielder", 0, True, 6),
+    make_player(107, "MID 2", "Midfielder", 90, True, 7),
+    make_player(108, "MID 3", "Midfielder", 90, True, 8),
+    make_player(109, "MID 4", "Midfielder", 90, True, 9),
+    make_player(110, "FWD 1", "Forward", 90, True, 10),
+    make_player(111, "FWD 2", "Forward", 90, True, 11),
+]
+
+conflict_bench = [
+    make_player(112, "Bench GK", "Goalkeeper", 90, False, 12),
+    make_player(113, "Bench MID", "Midfielder", 90, False, 13),
+    make_player(114, "Bench DEF", "Defender", 90, False, 14),
+    make_player(115, "Bench FWD", "Forward", 90, False, 15),
+]
+
+conflict_result = engine.apply_auto_substitutions(
+    conflict_xi + conflict_bench
+)
+
+for sub in conflict_result["substitutions"]:
+    print(
+        sub["player_out"]["player_name"],
+        "->",
+        sub["player_in"]["player_name"]
+    )
+
+print(
+    "Formation valid:",
+    conflict_result["formation_valid"]
+)
+
+
+print("\nSINGLE-SLOT BENCH PRIORITY TEST")
+print("-" * 60)
+
+single_xi = [player.copy() for player in conflict_xi]
+single_bench = [player.copy() for player in conflict_bench]
+
+# Only MID 1 did not play.
+for player in single_xi:
+    if player["player_name"] == "DEF 1":
+        player["minutes"] = 90
+
+# Bench DEF is first choice, Bench MID second.
+for player in single_bench:
+    if player["player_name"] == "Bench DEF":
+        player["squad_position"] = 13
+    elif player["player_name"] == "Bench MID":
+        player["squad_position"] = 14
+
+result = engine.apply_auto_substitutions(
+    single_xi + single_bench
+)
+
+substitutions = result["substitutions"]
+
+for sub in substitutions:
+    print(
+        sub["player_out"]["player_name"],
+        "->",
+        sub["player_in"]["player_name"]
+    )
+
+print("Formation valid:", result["formation_valid"])
+
+assert len(substitutions) == 1
+assert substitutions[0]["player_in"]["player_name"] == "Bench DEF"
+
+print("Bench priority test: PASS")
+
+
+print("\nGW5 FORMATION CHANGE TEST")
+print("-" * 60)
+
+# Use our existing 3-4-3 starting XI.
+gw5_xi = [player.copy() for player in xi]
+
+# The non-playing forward represents João Pedro.
+# All other starters played.
+for player in gw5_xi:
+    player["minutes"] = (
+        0 if player["player_name"] == "FWD 3" else 90
+    )
+
+# Use the existing bench and put the midfielder first.
+gw5_bench = [player.copy() for player in bench]
+
+for player in gw5_bench:
+    if player["player_name"] == "Bench MID":
+        player["squad_position"] = 13
+    elif player["player_name"] == "Bench DEF":
+        player["squad_position"] = 14
+    elif player["player_name"] == "Bench FWD":
+        player["squad_position"] = 15
+
+gw5_result = engine.apply_auto_substitutions(
+    gw5_xi + gw5_bench
+)
+
+for sub in gw5_result["substitutions"]:
+    print(
+        sub["player_out"]["player_name"],
+        "->",
+        sub["player_in"]["player_name"]
+    )
+
+formation = gw5_result["formation"]
+
+print(
+    "Final formation:",
+    f"{formation['Defender']}-"
+    f"{formation['Midfielder']}-"
+    f"{formation['Forward']}"
+)
+
+assert len(gw5_result["substitutions"]) == 1
+assert gw5_result["formation_valid"]
+assert (
+    formation["Defender"],
+    formation["Midfielder"],
+    formation["Forward"]
+) == (3, 5, 2)
+
+print("GW5 formation change test: PASS")
+
+
+print("\nBENCH PRIORITY FALLBACK TEST")
+print("-" * 60)
+
+# Reuse the 4-4-2 starting XI from earlier.
+fallback_xi = [player.copy() for player in conflict_xi]
+fallback_bench = [player.copy() for player in conflict_bench]
+
+# Only MID 1 is unavailable.
+for player in fallback_xi:
+    player["minutes"] = (
+        0 if player["player_name"] == "MID 1" else 90
+    )
+
+# Bench MID has first priority but did not play.
+# Bench DEF has second priority and played.
+for player in fallback_bench:
+    if player["player_name"] == "Bench MID":
+        player["minutes"] = 0
+    elif player["player_name"] == "Bench DEF":
+        player["minutes"] = 90
+
+fallback_result = engine.apply_auto_substitutions(
+    fallback_xi + fallback_bench
+)
+
+for sub in fallback_result["substitutions"]:
+    print(
+        sub["player_out"]["player_name"],
+        "->",
+        sub["player_in"]["player_name"]
+    )
+
+assert len(fallback_result["substitutions"]) == 1
+assert (
+    fallback_result["substitutions"][0]["player_in"]["player_name"]
+    == "Bench DEF"
+)
+assert fallback_result["formation_valid"]
+
+print("Bench priority fallback test: PASS")
+
+
+print("\nMULTIPLE STARTERS PRIORITY TEST")
+print("-" * 60)
+
+# Original 4-4-2:
+# DEF 1 and MID 1 did not play.
+# Only Bench MID played among the outfield substitutes.
+
+priority_xi = [player.copy() for player in conflict_xi]
+priority_bench = [player.copy() for player in conflict_bench]
+
+for player in priority_bench:
+    if player["player_name"] in ("Bench DEF", "Bench FWD"):
+        player["minutes"] = 0
+
+priority_result = engine.apply_auto_substitutions(
+    priority_xi + priority_bench
+)
+
+for sub in priority_result["substitutions"]:
+    print(
+        sub["player_out"]["player_name"],
+        "->",
+        sub["player_in"]["player_name"]
+    )
+
+print(
+    "Number of substitutions:",
+    len(priority_result["substitutions"])
+)
+print(
+    "Final formation:",
+    priority_result["formation"]
+)
+print(
+    "Formation valid:",
+    priority_result["formation_valid"]
+)
+
+assert len(priority_result["substitutions"]) == 1
+assert (
+    priority_result["substitutions"][0]["player_in"]["player_name"]
+    == "Bench MID"
+)
+
+print("Multiple starters priority test: PASS")
+
+
+print("\nSTARTER-FIRST VS BENCH-FIRST REGRESSION")
+print("-" * 60)
+
+# Original formation: 4-4-2
+# Missing starters: DEF 1 and MID 1
+# Bench priority:
+# 1. Bench MID (played)
+# 2. Bench DEF (played)
+# 3. Bench FWD (did not play)
+
+comparison_xi = [
+    make_player(201, "GK", "Goalkeeper", 90, True, 1),
+    make_player(202, "DEF 1", "Defender", 0, True, 2),
+    make_player(203, "DEF 2", "Defender", 90, True, 3),
+    make_player(204, "DEF 3", "Defender", 90, True, 4),
+    make_player(205, "DEF 4", "Defender", 90, True, 5),
+    make_player(206, "MID 1", "Midfielder", 0, True, 6),
+    make_player(207, "MID 2", "Midfielder", 90, True, 7),
+    make_player(208, "MID 3", "Midfielder", 90, True, 8),
+    make_player(209, "MID 4", "Midfielder", 90, True, 9),
+    make_player(210, "FWD 1", "Forward", 90, True, 10),
+    make_player(211, "FWD 2", "Forward", 90, True, 11),
+]
+
+comparison_bench = [
+    make_player(212, "Bench GK", "Goalkeeper", 90, False, 12),
+    make_player(213, "Bench MID", "Midfielder", 90, False, 13),
+    make_player(214, "Bench DEF", "Defender", 90, False, 14),
+    make_player(215, "Bench FWD", "Forward", 0, False, 15),
+]
+
+# Algorithm A: Current production engine
+starter_first_xi, starter_first_subs = (
+    engine.apply_outfield_substitutions(
+        comparison_xi,
+        comparison_bench[1:]
+    )
+)
+
+# Algorithm B: Experimental bench-first algorithm
+# This exists only inside the test file.
+def experimental_bench_first(starters, bench_players):
+    current_xi = starters.copy()
+    substitutions = []
+
+    for player_in in sorted(
+        bench_players,
+        key=lambda p: p["squad_position"]
+    ):
+        if not engine.player_played(player_in):
+            continue
+
+        for player_out in current_xi:
+            if player_out["position_name"] == "Goalkeeper":
+                continue
+
+            if engine.player_played(player_out):
+                continue
+
+            if not engine.can_make_substitution(
+                current_xi,
+                player_out,
+                player_in
+            ):
+                continue
+
+            current_xi = engine.apply_substitution(
+                current_xi,
+                player_out,
+                player_in
+            )
+
+            substitutions.append({
+                "player_out": player_out,
+                "player_in": player_in,
+            })
+            break
+
+    return current_xi, substitutions
+
+
+bench_first_xi, bench_first_subs = (
+    experimental_bench_first(
+        comparison_xi,
+        comparison_bench[1:]
+    )
+)
+
+def show_comparison(label, final_xi, substitutions):
+    print(f"\n{label}")
+
+    for sub in substitutions:
+        print(
+            sub["player_out"]["player_name"],
+            "->",
+            sub["player_in"]["player_name"]
+        )
+
+    print(
+        "Formation:",
+        engine.get_formation(final_xi)
+    )
+    print(
+        "Valid:",
+        engine.is_valid_formation(final_xi)
+    )
+
+    return {
+        player["player_id"]
+        for player in final_xi
+    }
+
+
+starter_ids = show_comparison(
+    "STARTER-FIRST",
+    starter_first_xi,
+    starter_first_subs
+)
+
+bench_ids = show_comparison(
+    "BENCH-FIRST",
+    bench_first_xi,
+    bench_first_subs
+)
+
+print("\nSame final XI:", starter_ids == bench_ids)
+
+assert engine.is_valid_formation(starter_first_xi)
+assert engine.is_valid_formation(bench_first_xi)
+
+print("Algorithm comparison test: PASS")
+
+
+print("\nAUTOMATED FORMATION COVERAGE TEST")
+print("-" * 60)
+
+valid_formations = [
+    (3, 4, 3),
+    (3, 5, 2),
+    (4, 3, 3),
+    (4, 4, 2),
+    (4, 5, 1),
+    (5, 3, 2),
+    (5, 4, 1),
+]
+
+for defenders, midfielders, forwards in valid_formations:
+    test_xi = [
+        make_player(
+            1000, "GK", "Goalkeeper", 90, True, 1
+        )
+    ]
+
+    player_id = 1001
+
+    for position, count in [
+        ("Defender", defenders),
+        ("Midfielder", midfielders),
+        ("Forward", forwards),
+    ]:
+        for number in range(count):
+            test_xi.append(
+                make_player(
+                    player_id,
+                    f"{position} {number + 1}",
+                    position,
+                    90,
+                    True,
+                    len(test_xi) + 1
+                )
+            )
+            player_id += 1
+
+    assert engine.is_valid_formation(test_xi)
+
+    print(
+        f"{defenders}-{midfielders}-{forwards}: PASS"
+    )
+
+print("Formation coverage test: PASS")
+
+
+from itertools import combinations, product
+
+print("\nAUTOMATED SUBSTITUTION COMPARISON")
+print("-" * 60)
+
+scenarios_checked = 0
+different_final_xi = 0
+first_difference = None
+
+for defenders, midfielders, forwards in valid_formations:
+
+    # Build a fresh starting XI for each formation.
+    starters = [
+        make_player(1000, "GK", "Goalkeeper", 90, True, 1)
+    ]
+
+    next_id = 1001
+
+    for position, count in [
+        ("Defender", defenders),
+        ("Midfielder", midfielders),
+        ("Forward", forwards),
+    ]:
+        for number in range(count):
+            starters.append(
+                make_player(
+                    next_id,
+                    f"{position} {number + 1}",
+                    position,
+                    90,
+                    True,
+                    len(starters) + 1
+                )
+            )
+            next_id += 1
+
+    bench = [
+        make_player(2000, "Bench DEF", "Defender", 90, False, 13),
+        make_player(2001, "Bench MID", "Midfielder", 90, False, 14),
+        make_player(2002, "Bench FWD", "Forward", 90, False, 15),
+    ]
+
+    # Test every pair of unavailable outfield starters.
+    for missing in combinations(range(1, 11), 2):
+
+        # Test all combinations of bench availability.
+        for availability in product((0, 90), repeat=3):
+
+            test_starters = [p.copy() for p in starters]
+            test_bench = [p.copy() for p in bench]
+
+            for index in missing:
+                test_starters[index]["minutes"] = 0
+
+            for player, minutes in zip(
+                test_bench, availability
+            ):
+                player["minutes"] = minutes
+
+            starter_xi, starter_subs = (
+                engine.apply_outfield_substitutions(
+                    test_starters,
+                    test_bench
+                )
+            )
+
+            bench_xi, bench_subs = (
+                experimental_bench_first(
+                    test_starters,
+                    test_bench
+                )
+            )
+
+            starter_ids = {
+                p["player_id"] for p in starter_xi
+            }
+            bench_ids = {
+                p["player_id"] for p in bench_xi
+            }
+
+            scenarios_checked += 1
+
+            assert engine.is_valid_formation(starter_xi)
+            assert engine.is_valid_formation(bench_xi)
+
+            if starter_ids != bench_ids:
+                different_final_xi += 1
+
+                if first_difference is None:
+                    first_difference = {
+                        "formation": (
+                            defenders, midfielders, forwards
+                        ),
+                        "missing": [
+                            test_starters[i]["player_name"]
+                            for i in missing
+                        ],
+                        "bench_minutes": availability,
+                        "starter_subs": [
+                            (
+                                s["player_out"]["player_name"],
+                                s["player_in"]["player_name"]
+                            )
+                            for s in starter_subs
+                        ],
+                        "bench_subs": [
+                            (
+                                s["player_out"]["player_name"],
+                                s["player_in"]["player_name"]
+                            )
+                            for s in bench_subs
+                        ],
+                    }
+
+print("Scenarios checked:", scenarios_checked)
+print("Different final XIs:", different_final_xi)
+
+if first_difference:
+    print("\nFIRST DIFFERENCE FOUND")
+    print("Formation:", first_difference["formation"])
+    print("Missing starters:", first_difference["missing"])
+    print("Bench minutes:", first_difference["bench_minutes"])
+    print("Starter-first:", first_difference["starter_subs"])
+    print("Bench-first:", first_difference["bench_subs"])
+else:
+    print("No differences found in tested scenarios.")
+
+print("Automated comparison complete.")
+
+
+
+from itertools import combinations, permutations, product
+
+print("\nEXPANDED AUTO-SUBSTITUTION REGRESSION")
+print("-" * 60)
+
+total_scenarios = 0
+different_final_xis = 0
+invalid_formations = 0
+first_difference = None
+
+bench_positions = ("Defender", "Midfielder", "Forward")
+
+for defenders, midfielders, forwards in valid_formations:
+
+    starters = [
+        make_player(1000, "GK", "Goalkeeper", 90, True, 1)
+    ]
+
+    next_id = 1001
+
+    for position, count in [
+        ("Defender", defenders),
+        ("Midfielder", midfielders),
+        ("Forward", forwards),
+    ]:
+        for number in range(count):
+            starters.append(
+                make_player(
+                    next_id,
+                    f"{position} {number + 1}",
+                    position,
+                    90,
+                    True,
+                    len(starters) + 1
+                )
+            )
+            next_id += 1
+
+    assert engine.is_valid_formation(starters)
+
+    for bench_order in permutations(bench_positions):
+
+        bench = [
+            make_player(
+                2000 + index,
+                f"Bench {position}",
+                position,
+                90,
+                False,
+                13 + index
+            )
+            for index, position in enumerate(bench_order)
+        ]
+
+        for missing_count in (1, 2, 3):
+
+            for missing in combinations(
+                range(1, 11),
+                missing_count
+            ):
+
+                for availability in product(
+                    (0, 90),
+                    repeat=3
+                ):
+
+                    test_starters = [
+                        player.copy()
+                        for player in starters
+                    ]
+
+                    test_bench = [
+                        player.copy()
+                        for player in bench
+                    ]
+
+                    for index in missing:
+                        test_starters[index]["minutes"] = 0
+
+                    for player, minutes in zip(
+                        test_bench,
+                        availability
+                    ):
+                        player["minutes"] = minutes
+
+                    starter_xi, starter_subs = (
+                        engine.apply_outfield_substitutions(
+                            test_starters,
+                            test_bench
+                        )
+                    )
+
+                    bench_xi, bench_subs = (
+                        experimental_bench_first(
+                            test_starters,
+                            test_bench
+                        )
+                    )
+
+                    starter_ids = {
+                        p["player_id"]
+                        for p in starter_xi
+                    }
+
+                    bench_ids = {
+                        p["player_id"]
+                        for p in bench_xi
+                    }
+
+                    total_scenarios += 1
+
+                    if (
+                        not engine.is_valid_formation(starter_xi)
+                        or not engine.is_valid_formation(bench_xi)
+                    ):
+                        invalid_formations += 1
+
+                    if starter_ids != bench_ids:
+                        different_final_xis += 1
+
+                        if first_difference is None:
+                            first_difference = {
+                                "formation": (
+                                    defenders,
+                                    midfielders,
+                                    forwards
+                                ),
+                                "bench_order": bench_order,
+                                "missing": [
+                                    test_starters[i]["player_name"]
+                                    for i in missing
+                                ],
+                                "availability": availability,
+                                "starter_subs": [
+                                    (
+                                        s["player_out"]["player_name"],
+                                        s["player_in"]["player_name"]
+                                    )
+                                    for s in starter_subs
+                                ],
+                                "bench_subs": [
+                                    (
+                                        s["player_out"]["player_name"],
+                                        s["player_in"]["player_name"]
+                                    )
+                                    for s in bench_subs
+                                ],
+                            }
+
+print("Total scenarios:", total_scenarios)
+print("Different final XIs:", different_final_xis)
+print("Invalid formations:", invalid_formations)
+
+if first_difference:
+    print("\nFIRST DIFFERENCE")
+    for key, value in first_difference.items():
+        print(f"{key}: {value}")
+else:
+    print("No final-XI differences found.")
+
+print("Expanded regression complete.")
