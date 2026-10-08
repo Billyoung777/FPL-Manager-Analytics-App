@@ -1432,3 +1432,316 @@ else:
     print("No final-XI differences found.")
 
 print("Expanded regression complete.")
+
+
+
+print("\nCAPTAINCY FALLBACK TEST")
+print("-" * 60)
+
+captain = {
+    "player_id": 301,
+    "player_name": "Captain",
+    "minutes": 90,
+    "is_captain": True,
+    "is_vice_captain": False,
+}
+
+vice = {
+    "player_id": 302,
+    "player_name": "Vice-Captain",
+    "minutes": 90,
+    "is_captain": False,
+    "is_vice_captain": True,
+}
+
+# Scenario 1: Captain plays
+result = engine.calculate_captaincy([captain, vice])
+
+assert result["effective_captain"]["player_id"] == 301
+assert result["multiplier"] == 2
+assert result["vice_captain_activated"] is False
+
+print("Captain plays: PASS")
+
+# Scenario 2: Captain doesn't play
+captain["minutes"] = 0
+
+result = engine.calculate_captaincy([captain, vice])
+
+assert result["effective_captain"]["player_id"] == 302
+assert result["multiplier"] == 2
+assert result["vice_captain_activated"] is True
+
+print("Vice-captain fallback: PASS")
+
+# Scenario 3: Neither plays
+vice["minutes"] = 0
+
+result = engine.calculate_captaincy([captain, vice])
+
+assert result["effective_captain"] is None
+assert result["multiplier"] == 1
+assert result["vice_captain_activated"] is False
+
+print("Neither plays: PASS")
+
+print("CAPTAINCY FALLBACK TEST COMPLETE")
+
+
+print("\nCAPTAINCY AND AUTO-SUB INTEGRATION TEST")
+print("-" * 60)
+
+# Reuse our earlier 3-4-3 starting XI and bench.
+integration_xi = [p.copy() for p in xi]
+
+integration_bench = [
+    make_player(12, "Bench GK", "Goalkeeper", 90, False, 12),
+    make_player(13, "Bench MID", "Midfielder", 90, False, 13),
+    make_player(14, "Bench DEF", "Defender", 90, False, 14),
+    make_player(15, "Bench FWD", "Forward", 90, False, 15),
+]
+
+
+# All players initially played.
+for player in integration_xi + integration_bench:
+    player["minutes"] = 90
+    player["is_captain"] = False
+    player["is_vice_captain"] = False
+
+# Captain: FWD 3, who did not play.
+# Vice-captain: MID 2, who played.
+for player in integration_xi:
+    if player["player_name"] == "FWD 3":
+        player["is_captain"] = True
+        player["minutes"] = 0
+    elif player["player_name"] == "MID 2":
+        player["is_vice_captain"] = True
+
+# Make Bench MID first in substitution priority.
+
+# Assign unique bench positions.
+
+# Assign unique bench positions.
+bench_order = {
+    "Bench GK": 12,
+    "Bench MID": 13,
+    "Bench Midfielder": 13,
+    "Bench DEF": 14,
+    "Bench Defender": 14,
+    "Bench FWD": 15,
+    "Bench Forward": 15,
+}
+
+for player in integration_bench:
+    player["squad_position"] = bench_order[
+        player["player_name"]
+    ]
+
+
+
+performances = integration_xi + integration_bench
+assert len(integration_xi) == 11
+assert len(integration_bench) == 4
+assert len(performances) == 15
+
+auto_sub_result = engine.apply_auto_substitutions(
+    performances
+)
+
+
+print("\nActual substitutions:")
+
+for sub in auto_sub_result["substitutions"]:
+    print(
+        sub["player_out"]["player_name"],
+        "->",
+        sub["player_in"]["player_name"]
+    )
+
+print(
+    "Final formation:",
+    auto_sub_result["formation"]
+)
+
+
+captaincy_result = engine.calculate_captaincy(
+    performances
+)
+
+print(
+    "Effective captain:",
+    captaincy_result["effective_captain"]["player_name"]
+)
+
+print(
+    "Vice-captain activated:",
+    captaincy_result["vice_captain_activated"]
+)
+
+print(
+    "Final formation:",
+    auto_sub_result["formation"]
+)
+
+assert (
+    captaincy_result["effective_captain"]["player_name"]
+    == "MID 2"
+)
+assert captaincy_result["vice_captain_activated"] is True
+assert captaincy_result["multiplier"] == 2
+assert auto_sub_result["formation_valid"]
+
+
+
+assert len(auto_sub_result["substitutions"]) == 1
+
+
+assert (
+    auto_sub_result["substitutions"][0]["player_in"]["player_name"]
+     == "Bench MID"
+)
+
+integration_bench = [
+    make_player(12, "Bench GK", "Goalkeeper", 90, False, 12),
+    make_player(13, "Bench MID", "Midfielder", 90, False, 13),
+    make_player(14, "Bench DEF", "Defender", 90, False, 14),
+    make_player(15, "Bench FWD", "Forward", 90, False, 15),
+]
+
+assert auto_sub_result["formation"] == {
+    "Goalkeeper": 1,
+    "Defender": 3,
+    "Midfielder": 5,
+    "Forward": 2,
+}
+
+print("Captaincy and auto-sub integration: PASS")
+
+
+print("\nSCORING ENGINE CAPTAINCY POINTS TEST")
+print("-" * 60)
+
+
+points_test = [
+    {
+        "player_name": "Captain",
+        "minutes": 0,
+        "points": 0,
+        "is_captain": True,
+        "is_vice_captain": False,
+    },
+    {
+        "player_name": "Vice-Captain",
+        "minutes": 90,
+        "points": 8,
+        "is_captain": False,
+        "is_vice_captain": True,
+    },
+    {
+        "player_name": "Other Starter",
+        "minutes": 90,
+        "points": 5,
+        "is_captain": False,
+        "is_vice_captain": False,
+    },
+]
+
+result = engine.calculate_captaincy_points(points_test)
+
+assert result["total_points"] == 21
+assert result["captaincy_multiplier"] == 2
+assert result["vice_captain_activated"] is True
+
+print("Calculated points:", result["total_points"])
+print("Captaincy multiplier:", result["captaincy_multiplier"])
+print("ScoringEngine captaincy points: PASS")
+
+
+print("\nFINAL XI POINTS INTEGRATION TEST")
+print("-" * 60)
+
+# Reuse the successful captaincy + auto-sub scenario.
+scoring_players = [
+    player.copy() for player in performances
+]
+
+# Give every player 2 points initially.
+for player in scoring_players:
+    player["points"] = 2
+
+    # Players who did not play earn zero points.
+    if player["minutes"] == 0:
+        player["points"] = 0
+
+# Vice-captain MID 2 scored 8 points.
+for player in scoring_players:
+    if player["player_name"] == "MID 2":
+        player["points"] = 8
+
+# An unused bench forward scored 10 points.
+# Those points must NOT count.
+for player in scoring_players:
+    if player["player_name"] == "Bench FWD":
+        player["points"] = 10
+
+auto_subs = engine.apply_auto_substitutions(
+    scoring_players
+)
+
+final_xi = auto_subs["final_xi"]
+
+# Captain FWD 3 was substituted out.
+# Preserve the original captaincy information
+# when determining the effective captain.
+captaincy = engine.calculate_captaincy(
+    scoring_players
+)
+
+# Apply the effective captain's multiplier to
+# the final XI.
+for player in final_xi:
+    player["is_captain"] = (
+        player is captaincy["effective_captain"]
+    )
+    player["is_vice_captain"] = False
+
+result = engine.calculate_captaincy_points(
+    final_xi
+)
+
+print("Final XI size:", len(final_xi))
+print("Calculated points:", result["total_points"])
+print("Unused bench forward excluded:",
+      all(p["player_name"] != "Bench Forward"
+          for p in final_xi))
+
+assert len(final_xi) == 11
+assert result["total_points"] == 36
+assert all(
+    p["player_name"] != "Bench Forward"
+    for p in final_xi
+)
+
+print("Final XI points integration: PASS")
+
+
+
+print("\nFULL GAMEWEEK SCORING TEST")
+print("-" * 60)
+
+result = engine.calculate_gameweek_points(
+    scoring_players
+)
+
+print("Base points:", result["base_points"])
+print("Captain bonus:", result["captain_bonus"])
+print("Total points:", result["total_points"])
+print("Final XI size:", len(result["final_xi"]))
+
+assert result["base_points"] == 28
+assert result["captain_bonus"] == 8
+assert result["total_points"] == 36
+assert len(result["final_xi"]) == 11
+assert result["formation_valid"] is True
+
+print("Full gameweek scoring: PASS")

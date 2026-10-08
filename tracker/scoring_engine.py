@@ -314,3 +314,124 @@ class ScoringEngine:
             "official": official_pairs,
             "matches": predicted_pairs == official_pairs,
         }
+
+#method to calculate captaincy determines which player receives the captaincy points multiplier based on their performance. It checks if the designated captain played, and if not, it checks if the vice-captain played. The method returns a dictionary containing information about the captain, effective captain, multiplier, and whether the vice-captain was activated.
+    def calculate_captaincy(self, performances):
+        """
+        Determine which player receives the captaincy
+        points multiplier.
+        """
+
+        captain = next(
+            (p for p in performances if p.get("is_captain")),
+            None
+        )
+
+        vice_captain = next(
+            (p for p in performances if p.get("is_vice_captain")),
+            None
+        )
+
+        if captain and self.player_played(captain):
+            return {
+                "captain": captain,
+                "effective_captain": captain,
+                "multiplier": 2,
+                "vice_captain_activated": False,
+            }
+
+        if vice_captain and self.player_played(vice_captain):
+            return {
+                "captain": captain,
+                "effective_captain": vice_captain,
+                "multiplier": 2,
+                "vice_captain_activated": True,
+            }
+
+        return {
+            "captain": captain,
+            "effective_captain": None,
+            "multiplier": 1,
+            "vice_captain_activated": False,
+        }
+
+#method to calculate captaincy points calculates the total points for a gameweek, taking into account the captaincy multiplier. It sums the points of all players and applies the captain's double-points bonus if applicable. The method returns a dictionary containing the total points, effective captain, captaincy multiplier, and whether the vice-captain was activated.
+    def calculate_captaincy_points(self, performances):
+        """
+        Calculate player points with the effective
+        captain's double-points bonus.
+
+        Expects players who count toward the GW score.
+        """
+        captaincy = self.calculate_captaincy(performances)
+
+        total_points = sum(
+            player["points"] for player in performances
+        )
+
+        effective_captain = captaincy["effective_captain"]
+
+        if effective_captain:
+            total_points += (
+                effective_captain["points"]
+                * (captaincy["multiplier"] - 1)
+            )
+
+        return {
+            "total_points": total_points,
+            "effective_captain": effective_captain,
+            "captaincy_multiplier": captaincy["multiplier"],
+            "vice_captain_activated": captaincy[
+                "vice_captain_activated"
+            ],
+        }
+
+#method to calculate gameweek points calculates the total points for a gameweek after applying automatic substitutions and captaincy fallback. It first applies auto substitutions to get the final starting lineup, then calculates the captaincy points. The method returns a dictionary containing the total points, base points, captain bonus, effective captain, final starting lineup, substitutions made, and whether the formation is valid.
+    def calculate_gameweek_points(self, performances):
+        """
+        Calculate gameweek points after automatic
+        substitutions and captaincy fallback.
+
+        Does not yet include chips or transfer costs.
+        """
+        auto_sub_result = self.apply_auto_substitutions(
+            performances
+        )
+
+        final_xi = auto_sub_result["final_xi"]
+
+        captaincy = self.calculate_captaincy(
+            performances
+        )
+
+        base_points = sum(
+            player["points"] for player in final_xi
+        )
+
+        effective_captain = captaincy["effective_captain"]
+
+        captain_bonus = 0
+
+        if effective_captain:
+            final_xi_ids = {
+                player["player_id"]
+                for player in final_xi
+            }
+
+            if effective_captain["player_id"] in final_xi_ids:
+                captain_bonus = (
+                    effective_captain["points"]
+                    * (captaincy["multiplier"] - 1)
+                )
+
+        total_points = base_points + captain_bonus
+
+        return {
+            "total_points": total_points,
+            "base_points": base_points,
+            "captain_bonus": captain_bonus,
+            "effective_captain": effective_captain,
+            "final_xi": final_xi,
+            "substitutions": auto_sub_result["substitutions"],
+            "formation_valid": auto_sub_result["formation_valid"],
+        }
