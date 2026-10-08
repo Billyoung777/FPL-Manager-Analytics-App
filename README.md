@@ -1,3 +1,4 @@
+![FPL Manager Analytics Banner](assets/fpl-manager-analytics-banner.png)
 # ⚽ FPL Manager Analytics
 
 **A Python-based Fantasy Premier League Manager Analytics System**
