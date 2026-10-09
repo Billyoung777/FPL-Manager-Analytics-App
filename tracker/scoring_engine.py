@@ -387,16 +387,40 @@ class ScoringEngine:
         }
 
 #method to calculate gameweek points calculates the total points for a gameweek after applying automatic substitutions and captaincy fallback. It first applies auto substitutions to get the final starting lineup, then calculates the captaincy points. The method returns a dictionary containing the total points, base points, captain bonus, effective captain, final starting lineup, substitutions made, and whether the formation is valid.
-    def calculate_gameweek_points(self, performances):
+    def calculate_gameweek_points(
+        self,
+        performances,
+        active_chip=None,
+        transfer_cost=0
+    ):
         """
-        Calculate gameweek points after automatic
-        substitutions and captaincy fallback.
+        Calculate gameweek points with automatic
+        substitutions, captaincy, Triple Captain,
+        and transfer-cost deductions.
+        """
 
-        Does not yet include chips or transfer costs.
-        """
-        auto_sub_result = self.apply_auto_substitutions(
-            performances
-        )
+        if active_chip == "bboost":
+            # Bench Boost counts all 15 players.
+            # Automatic substitutions are not applied.
+            final_xi = [
+                player for player in performances
+                if player["is_starting"]
+            ]
+
+            auto_sub_result = {
+                "final_xi": final_xi,
+                "substitutions": [],
+                "formation_valid": self.is_valid_formation(
+                    self.get_formation(final_xi)
+                ),
+            }
+        else:
+            auto_sub_result = self.apply_auto_substitutions(
+                performances
+            )
+
+            final_xi = auto_sub_result["final_xi"]
+
 
         final_xi = auto_sub_result["final_xi"]
 
@@ -404,30 +428,55 @@ class ScoringEngine:
             performances
         )
 
-        base_points = sum(
-            player["points"] for player in final_xi
-        )
+
+        if active_chip == "bboost":
+            # Bench Boost counts all 15 squad members.
+            base_points = sum(
+                player["points"] for player in performances
+            )
+        else:
+            # Normal scoring counts the final starting XI.
+            base_points = sum(
+                player["points"] for player in final_xi
+            )
 
         effective_captain = captaincy["effective_captain"]
+
+        final_xi_ids = {
+            player["player_id"]
+            for player in final_xi
+        }
 
         captain_bonus = 0
 
         if effective_captain:
-            final_xi_ids = {
-                player["player_id"]
-                for player in final_xi
-            }
-
             if effective_captain["player_id"] in final_xi_ids:
                 captain_bonus = (
                     effective_captain["points"]
                     * (captaincy["multiplier"] - 1)
                 )
 
-        total_points = base_points + captain_bonus
+        # Triple Captain: one additional captain bonus.
+        if active_chip == "3xc" and effective_captain:
+            if effective_captain["player_id"] in final_xi_ids:
+                captain_bonus += effective_captain["points"]
+
+        # Wildcard and Free Hit avoid transfer deductions.
+        if active_chip in ("wildcard", "freehit"):
+            applied_transfer_cost = 0
+        else:
+            applied_transfer_cost = transfer_cost
+
+        total_points = (
+            base_points
+            + captain_bonus
+            - applied_transfer_cost
+        )
 
         return {
             "total_points": total_points,
+            "transfer_cost": applied_transfer_cost,
+            "active_chip": active_chip,
             "base_points": base_points,
             "captain_bonus": captain_bonus,
             "effective_captain": effective_captain,
@@ -435,3 +484,4 @@ class ScoringEngine:
             "substitutions": auto_sub_result["substitutions"],
             "formation_valid": auto_sub_result["formation_valid"],
         }
+
