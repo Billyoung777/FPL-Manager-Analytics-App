@@ -4,7 +4,7 @@ import requests
 class FPLClient:
     BASE_URL = "https://fantasy.premierleague.com/api"
 
-    def __init__(self, timeout=10):
+    def __init__(self, timeout=30):
         self.timeout = timeout
 # This method is used to make a GET request to the FPL API and return the JSON response. It handles exceptions for timeouts, HTTP errors, and other request-related issues.
     def get(self, endpoint):

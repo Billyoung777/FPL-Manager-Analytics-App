@@ -20,6 +20,41 @@ history_data = response.json()
 
 gameweeks = history_data["current"]
 
+# Fetch official gameweek completion statuses.
+events_response = requests.get(
+    f"{BASE_URL}/bootstrap-static/",
+    timeout=30
+)
+events_response.raise_for_status()
+
+events = {
+    event["id"]: event
+    for event in events_response.json()["events"]
+}
+
+# Validate only finalized gameweeks.
+completed_gameweeks = [
+    gw for gw in gameweeks
+    if events.get(gw["event"], {}).get("finished") is True
+    and events.get(gw["event"], {}).get("data_checked") is True
+]
+
+print(
+    f"\nFinalized gameweeks available: "
+    f"{len(completed_gameweeks)}"
+)
+
+skipped = [
+    gw["event"] for gw in gameweeks
+    if gw not in completed_gameweeks
+]
+
+if skipped:
+    print(f"Unfinished gameweeks skipped: {skipped}")
+
+gameweeks = completed_gameweeks
+
+
 print(f"\nManager ID: {MANAGER_ID}")
 print(f"Gameweeks found: {len(gameweeks)}")
 
@@ -151,6 +186,37 @@ for gw in gameweeks:
         active_chip=picks_data.get("active_chip"),
         transfer_cost=gw["event_transfers_cost"]
     )
+
+
+    if gw_number == 6:
+        print("\n" + "=" * 60)
+        print("GW6 SCORING DEBUG")
+        print("=" * 60)
+
+        for pick, performance in zip(
+            picks_data["picks"], performances
+        ):
+            print(
+                f"{performance['player_name']:<20} "
+                f"Position: {pick['position']:<2} "
+                f"Multiplier: {pick['multiplier']} "
+                f"Minutes: {performance['minutes']:<3} "
+                f"Points: {performance['points']:<3} "
+                f"Captain: {performance['is_captain']} "
+                f"Vice: {performance['is_vice_captain']}"
+            )
+
+        print("\nOFFICIAL AUTO SUBSTITUTIONS:")
+        print(picks_data.get("automatic_subs", []))
+
+        print("\nACTIVE CHIP:")
+        print(picks_data.get("active_chip"))
+
+        print("\nSCORING ENGINE RESULT:")
+        print(result)
+
+        print("\nOFFICIAL ENTRY HISTORY:")
+        print(picks_data.get("entry_history"))
 
     official_points = gw["points"]
     calculated_points = result["total_points"]
