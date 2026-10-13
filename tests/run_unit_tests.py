@@ -3,6 +3,7 @@ import subprocess
 import sys
 
 TEST_MODULES = [
+    "tests.test_head_to_head",
     "tests.test_gameweek_winners",
     "tests.test_historical_rankings",
     "tests.test_league_insights",
