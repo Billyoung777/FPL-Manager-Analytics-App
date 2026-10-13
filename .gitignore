@@ -27,3 +27,9 @@ htmlcov/
 # Temporary files
 *.log
 *.tmp
+
+# SQLite database files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
