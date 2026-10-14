@@ -117,5 +117,24 @@ def sync_all():
     }
 
 
+def get_exit_code(result):
+    """Convert synchronization status into a process exit code."""
+
+    status = result.get("status")
+
+    if status == "success":
+        return 0
+
+    if status == "partial":
+        return 2
+
+    return 1
+
+
+
 if __name__ == "__main__":
-    sync_all()
+    import sys
+
+    result = sync_all()
+    sys.exit(get_exit_code(result))
+
