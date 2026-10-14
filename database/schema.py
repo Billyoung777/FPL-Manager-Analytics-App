@@ -1,6 +1,4 @@
-
 from database.db import get_connection
-
 
 def create_tables():
     """
@@ -14,6 +12,14 @@ def create_tables():
                 manager_id INTEGER PRIMARY KEY,
                 manager_name TEXT NOT NULL,
                 team_name TEXT NOT NULL,
+                last_updated TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS leagues (
+                league_id INTEGER PRIMARY KEY,
+                league_name TEXT NOT NULL,
                 last_updated TEXT DEFAULT CURRENT_TIMESTAMP
             )
         """)
@@ -52,17 +58,21 @@ def create_tables():
             )
         """)
 
-        connection.commit()
-        print("Managers table created successfully.")
-        
         connection.execute("""
-            CREATE TABLE IF NOT EXISTS leagues (
-                league_id INTEGER PRIMARY KEY,
-                league_name TEXT NOT NULL,
-                last_updated TEXT DEFAULT CURRENT_TIMESTAMP
+            CREATE TABLE IF NOT EXISTS sync_history (
+                sync_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                season TEXT NOT NULL,
+                status TEXT NOT NULL,
+                successful_managers INTEGER DEFAULT 0,
+                failed_managers INTEGER DEFAULT 0,
+                started_at TEXT NOT NULL,
+                finished_at TEXT NOT NULL
             )
         """)
 
+        connection.commit()
+
+        print("All database tables initialized successfully.")
 
     finally:
         connection.close()

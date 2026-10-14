@@ -1,12 +1,18 @@
 import unittest
-from unittest.mock import patch
 import io
 from contextlib import redirect_stdout
+from unittest.mock import patch
 from database.sync_all import sync_all
-
 
 class TestSyncAll(unittest.TestCase):
 
+    def setUp(self):
+        history_patcher = patch(
+            "database.sync_all.save_sync_history"
+        )
+
+        self.mock_save_history = history_patcher.start()
+        self.addCleanup(history_patcher.stop)
 
     @patch("database.sync_all.sync_all_gameweeks")
     @patch("database.sync_all.sync_league_memberships")
@@ -21,14 +27,11 @@ class TestSyncAll(unittest.TestCase):
 
         output = io.StringIO()
 
-        
         with redirect_stdout(output):
             sync_result = sync_all()
 
-
         result = output.getvalue()
 
-        
         self.assertEqual(
             sync_result,
             {
@@ -39,7 +42,6 @@ class TestSyncAll(unittest.TestCase):
                 "failed_managers": []
             }
         )
-
 
         self.assertIn(
             "All tracked managers synchronized successfully.",
@@ -54,6 +56,17 @@ class TestSyncAll(unittest.TestCase):
         mock_create_tables.assert_called_once()
         self.assertEqual(mock_memberships.call_count, 2)
         mock_gameweeks.assert_called_once_with("2026/27")
+        self.mock_save_history.assert_called_once()
+        
+        saved_data = self.mock_save_history.call_args.kwargs
+
+        self.assertEqual(saved_data["season"], "2026/27")
+        self.assertEqual(saved_data["status"], "success")
+        self.assertEqual(saved_data["successful_managers"], 12)
+        self.assertEqual(saved_data["failed_managers"], 0)
+
+        self.assertTrue(saved_data["started_at"])
+        self.assertTrue(saved_data["finished_at"])
 
 
     @patch("database.sync_all.sync_all_gameweeks")
@@ -69,9 +82,11 @@ class TestSyncAll(unittest.TestCase):
             "Simulated API failure"
         )
 
-        sync_result = sync_all()
+        output = io.StringIO()
 
-        
+        with redirect_stdout(output):
+            sync_result = sync_all()
+
         self.assertEqual(
             sync_result,
             {
@@ -86,6 +101,18 @@ class TestSyncAll(unittest.TestCase):
         mock_create_tables.assert_called_once()
         self.assertEqual(mock_memberships.call_count, 2)
         mock_gameweeks.assert_not_called()
+        self.mock_save_history.assert_called_once()
+        
+        saved_data = self.mock_save_history.call_args.kwargs
+
+        self.assertEqual(saved_data["season"], "2026/27")
+        self.assertEqual(saved_data["status"], "failed")
+        self.assertEqual(saved_data["successful_managers"], 0)
+        self.assertEqual(saved_data["failed_managers"], 0)
+
+        self.assertTrue(saved_data["started_at"])
+        self.assertTrue(saved_data["finished_at"])
+
 
     @patch("database.sync_all.sync_all_gameweeks")
     @patch("database.sync_all.sync_league_memberships")
@@ -100,7 +127,10 @@ class TestSyncAll(unittest.TestCase):
             "Simulated gameweek API failure"
         )
 
-        sync_result = sync_all()
+        output = io.StringIO()
+
+        with redirect_stdout(output):
+            sync_result = sync_all()
 
         self.assertEqual(
             sync_result,
@@ -115,6 +145,17 @@ class TestSyncAll(unittest.TestCase):
         mock_create_tables.assert_called_once()
         self.assertEqual(mock_memberships.call_count, 2)
         mock_gameweeks.assert_called_once_with("2026/27")
+        self.mock_save_history.assert_called_once()
+        
+        saved_data = self.mock_save_history.call_args.kwargs
+
+        self.assertEqual(saved_data["season"], "2026/27")
+        self.assertEqual(saved_data["status"], "failed")
+        self.assertEqual(saved_data["successful_managers"], 0)
+        self.assertEqual(saved_data["failed_managers"], 0)
+
+        self.assertTrue(saved_data["started_at"])
+        self.assertTrue(saved_data["finished_at"])
 
 
 
@@ -135,13 +176,11 @@ class TestSyncAll(unittest.TestCase):
 
         output = io.StringIO()
 
-        
         with redirect_stdout(output):
             sync_result = sync_all()
 
-
         result = output.getvalue()
-        
+
         self.assertEqual(
             sync_result,
             {
@@ -151,7 +190,6 @@ class TestSyncAll(unittest.TestCase):
                 "failed_managers": [953118, 1053858]
             }
         )
-
 
         self.assertIn(
             "WARNING: PARTIAL SYNCHRONIZATION",
@@ -181,6 +219,17 @@ class TestSyncAll(unittest.TestCase):
         mock_create_tables.assert_called_once()
         self.assertEqual(mock_memberships.call_count, 2)
         mock_gameweeks.assert_called_once_with("2026/27")
+        self.mock_save_history.assert_called_once()
+        
+        saved_data = self.mock_save_history.call_args.kwargs
+
+        self.assertEqual(saved_data["season"], "2026/27")
+        self.assertEqual(saved_data["status"], "partial")
+        self.assertEqual(saved_data["successful_managers"], 10)
+        self.assertEqual(saved_data["failed_managers"], 2)
+
+        self.assertTrue(saved_data["started_at"])
+        self.assertTrue(saved_data["finished_at"])
 
 
 

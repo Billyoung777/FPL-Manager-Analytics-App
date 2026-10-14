@@ -1,6 +1,5 @@
-
 from datetime import datetime
-
+from database.sync_history_repository import save_sync_history
 from database.schema import create_tables
 from database.sync_memberships import sync_league_memberships
 from database.sync_all_gameweeks import sync_all_gameweeks
@@ -14,13 +13,16 @@ LEAGUE_IDS = [
 ]
 
 
+
+
 def sync_all():
+    started_at = get_sync_timestamp()
+
     print("=" * 65)
     print("FPL MANAGER ANALYTICS - DATABASE SYNCHRONIZATION")
     print("=" * 65)
-
     print(f"Season: {SEASON}")
-    print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Started: {started_at}")
 
     # STEP 1: Initialize database tables.
     print("\n[1/3] INITIALIZING DATABASE")
@@ -52,13 +54,15 @@ def sync_all():
         print(f"Failed leagues: {failed_leagues}")
         print("Fix league errors before synchronizing gameweeks.")
 
-        return {
+        return record_sync_result({
             "status": "failed",
             "season": SEASON,
             "stage": "leagues",
             "successful_leagues": successful_leagues,
             "failed_leagues": failed_leagues
-        }
+        }, started_at)
+
+
 
 
     # STEP 3: Synchronize gameweek performances.
@@ -77,12 +81,12 @@ def sync_all():
             print(f"Failed managers: {len(failed_managers)}")
             print(f"Failed manager IDs: {failed_managers}")
 
-            return {
+            return record_sync_result({
                 "status": "partial",
                 "season": SEASON,
                 "successful_managers": successful_managers,
                 "failed_managers": failed_managers
-            }
+            }, started_at)
 
 
         print("\nAll tracked managers synchronized successfully.")
@@ -91,13 +95,12 @@ def sync_all():
     except Exception as error:
         print(f"ERROR: Gameweek synchronization failed: {error}")
 
-        return {
+        return record_sync_result({
             "status": "failed",
             "season": SEASON,
             "stage": "gameweeks",
             "error": str(error)
-        }
-
+        }, started_at)
 
 
     print("\n" + "=" * 65)
@@ -108,13 +111,42 @@ def sync_all():
     print(f"Season: {SEASON}")
     print(f"Finished: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
-    return {
+
+    return record_sync_result({
         "status": "success",
         "season": SEASON,
         "successful_leagues": successful_leagues,
         "successful_managers": successful_managers,
         "failed_managers": []
-    }
+    }, started_at)
+
+
+
+
+
+def get_sync_timestamp():
+    """
+    Return the current timestamp for synchronization logging.
+    """
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def record_sync_result(result, started_at):
+    """
+    Save a synchronization result and return it unchanged.
+    """
+    finished_at = get_sync_timestamp()
+
+    save_sync_history(
+        season=result["season"],
+        status=result["status"],
+        successful_managers=result.get("successful_managers", 0),
+        failed_managers=len(result.get("failed_managers", [])),
+        started_at=started_at,
+        finished_at=finished_at
+    )
+
+    return result
 
 
 def get_exit_code(result):
