@@ -21,10 +21,25 @@ class TestSyncAll(unittest.TestCase):
 
         output = io.StringIO()
 
+        
         with redirect_stdout(output):
-            sync_all()
+            sync_result = sync_all()
+
 
         result = output.getvalue()
+
+        
+        self.assertEqual(
+            sync_result,
+            {
+                "status": "success",
+                "season": "2026/27",
+                "successful_leagues": 2,
+                "successful_managers": 12,
+                "failed_managers": []
+            }
+        )
+
 
         self.assertIn(
             "All tracked managers synchronized successfully.",
@@ -54,7 +69,19 @@ class TestSyncAll(unittest.TestCase):
             "Simulated API failure"
         )
 
-        sync_all()
+        sync_result = sync_all()
+
+        
+        self.assertEqual(
+            sync_result,
+            {
+                "status": "failed",
+                "season": "2026/27",
+                "stage": "leagues",
+                "successful_leagues": 0,
+                "failed_leagues": [1701837, 1840079]
+            }
+        )
 
         mock_create_tables.assert_called_once()
         self.assertEqual(mock_memberships.call_count, 2)
@@ -73,7 +100,17 @@ class TestSyncAll(unittest.TestCase):
             "Simulated gameweek API failure"
         )
 
-        sync_all()
+        sync_result = sync_all()
+
+        self.assertEqual(
+            sync_result,
+            {
+                "status": "failed",
+                "season": "2026/27",
+                "stage": "gameweeks",
+                "error": "Simulated gameweek API failure"
+            }
+        )
 
         mock_create_tables.assert_called_once()
         self.assertEqual(mock_memberships.call_count, 2)
@@ -98,10 +135,23 @@ class TestSyncAll(unittest.TestCase):
 
         output = io.StringIO()
 
+        
         with redirect_stdout(output):
-            sync_all()
+            sync_result = sync_all()
+
 
         result = output.getvalue()
+        
+        self.assertEqual(
+            sync_result,
+            {
+                "status": "partial",
+                "season": "2026/27",
+                "successful_managers": 10,
+                "failed_managers": [953118, 1053858]
+            }
+        )
+
 
         self.assertIn(
             "WARNING: PARTIAL SYNCHRONIZATION",

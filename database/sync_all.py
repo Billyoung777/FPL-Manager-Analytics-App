@@ -45,12 +45,21 @@ def sync_all():
             failed_leagues.append(league_id)
 
     # Avoid incomplete gameweek synchronization if a league failed.
+
     if failed_leagues:
         print("\nSynchronization incomplete.")
         print(f"Successful leagues: {successful_leagues}")
         print(f"Failed leagues: {failed_leagues}")
         print("Fix league errors before synchronizing gameweeks.")
-        return
+
+        return {
+            "status": "failed",
+            "season": SEASON,
+            "stage": "leagues",
+            "successful_leagues": successful_leagues,
+            "failed_leagues": failed_leagues
+        }
+
 
     # STEP 3: Synchronize gameweek performances.
     print("\n[3/3] SYNCHRONIZING GAMEWEEK PERFORMANCES")
@@ -61,18 +70,34 @@ def sync_all():
             sync_all_gameweeks(SEASON)
         )
 
+        
         if failed_managers:
             print("\nWARNING: PARTIAL SYNCHRONIZATION")
             print(f"Successful managers: {successful_managers}")
             print(f"Failed managers: {len(failed_managers)}")
             print(f"Failed manager IDs: {failed_managers}")
-            return
+
+            return {
+                "status": "partial",
+                "season": SEASON,
+                "successful_managers": successful_managers,
+                "failed_managers": failed_managers
+            }
+
 
         print("\nAll tracked managers synchronized successfully.")
 
+    
     except Exception as error:
         print(f"ERROR: Gameweek synchronization failed: {error}")
-        return
+
+        return {
+            "status": "failed",
+            "season": SEASON,
+            "stage": "gameweeks",
+            "error": str(error)
+        }
+
 
 
     print("\n" + "=" * 65)
@@ -82,6 +107,14 @@ def sync_all():
     print(f"Leagues processed: {successful_leagues}")
     print(f"Season: {SEASON}")
     print(f"Finished: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    return {
+        "status": "success",
+        "season": SEASON,
+        "successful_leagues": successful_leagues,
+        "successful_managers": successful_managers,
+        "failed_managers": []
+    }
 
 
 if __name__ == "__main__":
