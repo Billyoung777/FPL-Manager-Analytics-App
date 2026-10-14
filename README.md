@@ -120,12 +120,12 @@ The project currently provides Python modules and test scripts rather than a fin
 | Milestone | Status |
 | --- | --- |
 | M0 — Project Foundation | Completed |
-| M1 — FPL Data Engine | Completed core functionality |
-| M2 — Manager Tracker | Completed core functionality |
-| M3 — Analytics & Scoring Engine | In Progress |
-| M4 — Mini-League Analytics | Planned |
-| M5 — Database Integration | Planned |
-| M6 — Interactive Dashboard | Planned |
+| M1 — FPL Data Engine | Completed |
+| M2 — Manager Tracker | Completed |
+| M3 — Analytics & Scoring Engine | Completed core functionality |
+| M4 — Mini-League Analytics | Completed |
+| M5 — Database Integration | Completed |
+| M6 — Interactive Dashboard | In Progress |
 | M7 — Automation | Planned |
 | M8 — Testing & Release | Planned |
 
