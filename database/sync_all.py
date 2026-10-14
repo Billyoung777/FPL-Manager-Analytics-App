@@ -55,11 +55,25 @@ def sync_all():
     # STEP 3: Synchronize gameweek performances.
     print("\n[3/3] SYNCHRONIZING GAMEWEEK PERFORMANCES")
 
+
     try:
-        sync_all_gameweeks(SEASON)
+        successful_managers, failed_managers = (
+            sync_all_gameweeks(SEASON)
+        )
+
+        if failed_managers:
+            print("\nWARNING: PARTIAL SYNCHRONIZATION")
+            print(f"Successful managers: {successful_managers}")
+            print(f"Failed managers: {len(failed_managers)}")
+            print(f"Failed manager IDs: {failed_managers}")
+            return
+
+        print("\nAll tracked managers synchronized successfully.")
+
     except Exception as error:
         print(f"ERROR: Gameweek synchronization failed: {error}")
         return
+
 
     print("\n" + "=" * 65)
     print("SYNCHRONIZATION PROCESS FINISHED")
