@@ -1,9 +1,7 @@
-
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
-
 from database import db
 from database.schema import create_tables
 from database.manager_repository import save_manager
@@ -107,6 +105,40 @@ class TestDatabaseLeagueAnalytics(unittest.TestCase):
                 999999, "2026/27"
             )
 
+
+    @patch("database.league_analytics.get_gameweek_statuses")
+    def test_verified_vs_provisional(self, mock_statuses):
+        # Simulate GW1 verified and GW2 not verified.
+        mock_statuses.return_value = [
+            {"gameweek": 1, "verified": True},
+            {"gameweek": 2, "verified": False}
+        ]
+
+        _, verified = get_database_leaderboard(
+            100, "2026/27", mode="verified"
+        )
+
+        _, provisional = get_database_leaderboard(
+            100, "2026/27", mode="provisional"
+        )
+
+        verified_points = {
+            manager["manager_id"]: manager["total_points"]
+            for manager in verified
+        }
+
+        provisional_points = {
+            manager["manager_id"]: manager["total_points"]
+            for manager in provisional
+        }
+
+        # Verified mode counts only GW1.
+        self.assertEqual(verified_points[1], 60)
+        self.assertEqual(verified_points[2], 55)
+
+        # Provisional mode includes GW1 and GW2.
+        self.assertEqual(provisional_points[1], 106)
+        self.assertEqual(provisional_points[2], 120)
 
 if __name__ == "__main__":
     unittest.main()
