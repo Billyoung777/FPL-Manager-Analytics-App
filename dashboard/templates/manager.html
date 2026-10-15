@@ -11,7 +11,6 @@
       href="{{ url_for('static', filename='css/style.css') }}"
     />
   </head>
-
   <body>
     <div class="dashboard">
       <!-- SIDEBAR -->
@@ -35,6 +34,24 @@
           <h1>FPL Manager Dashboard</h1>
           <p>Season 2026/27 | Fantasy Premier League Analytics</p>
         </header>
+
+        <!-- MANAGER SELECTOR -->
+        <div class="manager-selector">
+          <form action="{{ url_for('manager_dashboard') }}" method="GET">
+            <label for="manager-select">Select FPL Manager</label>
+
+            <select id="manager-select" name="id" onchange="this.form.submit()">
+              {% for manager in managers %}
+              <option
+                value="{{ manager[0] }}"
+                {% if manager[0]==selected_manager_id %}selected{% endif %}
+              >
+                {{ manager[2] }} — {{ manager[1] }}
+              </option>
+              {% endfor %}
+            </select>
+          </form>
+        </div>
 
         <!-- MANAGER INFORMATION -->
         <section class="stats-grid">

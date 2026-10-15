@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from database.db import get_connection
 
 app = Flask(__name__)
@@ -35,9 +35,21 @@ def database_test():
 
 @app.route("/manager")
 def manager_dashboard():
-    manager_id = 1053858
+    manager_id = request.args.get(
+        "id", default=6979233, type=int
+    )
+
+    if manager_id <= 0:
+        return "Invalid manager ID", 400
 
     connection = get_connection()
+    managers = connection.execute(
+    """
+    SELECT manager_id, manager_name, team_name
+    FROM managers
+    ORDER BY team_name ASC
+    """
+).fetchall()
 
     try:
         cursor = connection.execute(
@@ -118,7 +130,9 @@ def manager_dashboard():
             lowest_points=lowest_points,
             gameweek_labels=gameweek_labels,
             gameweek_points=gameweek_points,
-            cumulative_points=cumulative_points
+            cumulative_points=cumulative_points,
+            managers=managers,
+            selected_manager_id=manager_id
         )
 
 
