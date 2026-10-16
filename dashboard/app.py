@@ -99,13 +99,21 @@ def manager_dashboard():
         ).fetchone()
 
         average_points, highest_points, lowest_points = performance
+        # Use net points for dashboard summary cards.
+        # This keeps the dashboard consistent with manager analytics.
+        total_points = analytics["total_net_points"]
+        average_points = analytics["average_points"]
+        highest_points = analytics["best_gameweek"]["points"]
+        lowest_points = analytics["worst_gameweek"]["points"]
         
         gameweek_rows = connection.execute(
             """
-            SELECT gameweek, points
+            SELECT
+                gameweek,
+                points - transfer_cost AS net_points
             FROM gameweek_performances
             WHERE manager_id = ?
-              AND season = ?
+            AND season = ?
             ORDER BY gameweek ASC
             """,
             (manager_id, "2026/27")

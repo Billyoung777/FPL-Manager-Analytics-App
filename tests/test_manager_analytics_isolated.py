@@ -68,5 +68,38 @@ class TestManagerAnalyticsIsolated(unittest.TestCase):
                 {"gameweek": 3, "points": 40, "change": -26}
             ]
         )
+
+    @patch("database.manager_analytics.get_manager")
+    @patch("database.manager_analytics.get_manager_gameweeks")
+    def test_transfer_deduction_affects_net_points(
+        self, mock_gameweeks, mock_manager
+    ):
+        mock_manager.return_value = {
+            "manager_id": 12345,
+            "team_name": "Test FC"
+        }
+
+        mock_gameweeks.return_value = [
+            {
+                "gameweek": 1,
+                "points": 70,
+                "transfer_cost": 4
+            }
+        ]
+
+        result = calculate_manager_analytics(
+            12345, "2026/27"
+        )
+
+        self.assertEqual(result["total_net_points"], 66)
+        self.assertEqual(result["average_points"], 66.0)
+        self.assertEqual(
+            result["best_gameweek"],
+            {"gameweek": 1, "points": 66}
+        )
+        self.assertEqual(
+            result["performance_trends"][0]["points"],
+            66
+        )
 if __name__ == "__main__":
     unittest.main()
