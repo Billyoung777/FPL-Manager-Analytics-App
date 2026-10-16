@@ -35,18 +35,29 @@ class FPLClient:
 # Manager data (Manager ID, Team name, Player name)
     def get_manager(self, manager_id):
         return self.get(f"entry/{manager_id}/")
+    
+# Retrieve classic mini-league standings
+    def get_league_standings(self, league_id, page=1):
+        return self.get(
+            f"leagues-classic/{league_id}/standings/?page_standings={page}"
+        )
+    
 # Manager gameweek history
     def get_manager_history(self, manager_id):
         return self.get(f"entry/{manager_id}/history/")
+    
 # Manager picks for a specific gameweek       
     def get_manager_picks(self, manager_id, gameweek):
         return self.get(f"entry/{manager_id}/event/{gameweek}/picks/")
+    
 # Player data (Player ID, Name, Team, Position, Cost, Points, etc.)         
     def get_players(self):
         return self.get("bootstrap-static/")
+    
 # Gameweek player stats (Player ID, Gameweek, Points, Goals, Assists, Clean Sheets, etc.)
     def get_player_history(self, player_id):
         return self.get(f"element-summary/{player_id}/")
+    
 # Gameweek player stats for a specific gameweek (Player ID, Gameweek, Points, Goals, Assists, Clean Sheets, etc.)
     def get_player_history(self, player_id):
         return self.get(f"element-summary/{player_id}/")
