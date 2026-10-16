@@ -46,12 +46,14 @@ body {
 }
 
 .sidebar a {
-  display: block;
-  color: var(--muted);
-  text-decoration: none;
-  padding: 14px;
-  border-radius: 8px;
-  margin-bottom: 8px;
+  flex: 0 1 auto;
+  max-width: 100%;
+  min-width: 0;
+  margin-bottom: 0;
+  padding: 10px 12px;
+  font-size: 13px;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .sidebar a:hover,
@@ -105,6 +107,7 @@ body {
   color: var(--accent);
 }
 
+/* Mobile dashboard layout */
 @media (max-width: 700px) {
   .dashboard {
     flex-direction: column;
@@ -112,10 +115,70 @@ body {
 
   .sidebar {
     width: 100%;
+    padding: 18px 16px;
+    border-right: none;
+    border-bottom: 1px solid #24364d;
+  }
+
+  .sidebar h2 {
+    margin: 0 0 8px;
+    font-size: 20px;
+  }
+
+  .sidebar p {
+    margin: 0;
+    font-size: 12px;
+  }
+
+  .sidebar nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .sidebar a {
+    margin-bottom: 0;
+    padding: 10px 12px;
+    font-size: 13px;
   }
 
   .main-content {
-    padding: 20px;
+    padding: 20px 16px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(min(100%, 160px), 1fr)
+    );
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .stat-card {
+    padding: 18px;
+  }
+
+  .stat-card .value {
+    font-size: 28px;
+  }
+
+  .chart-section {
+    padding: 18px 14px;
+  }
+
+  .chart-container {
+    height: 280px;
+    margin-top: 18px;
+  }
+
+  .manager-selector {
+    padding: 16px;
+  }
+
+  .manager-selector select {
+    max-width: 100%;
   }
 }
 
