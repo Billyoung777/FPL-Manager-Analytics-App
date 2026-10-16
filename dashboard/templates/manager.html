@@ -42,9 +42,9 @@
 
             <select id="manager-select" name="id" onchange="this.form.submit()">
               {% for manager in managers %}
+              <!-- prettier-ignore -->
               <option
-                value="{{ manager[0] }}"
-                {% if manager[0]==selected_manager_id %}selected{% endif %}
+                value="{{ manager[0] }}" {%if manager[0] == selected_manager_id%}selected{%endif%}
               >
                 {{ manager[2] }} — {{ manager[1] }}
               </option>
@@ -98,6 +98,110 @@
             </div>
           </div>
         </section>
+                <!-- MANAGER PERFORMANCE INSIGHTS -->
+        <section class="chart-section">
+          <h2>Manager Performance Insights</h2>
+          <p>Season performance after transfer point deductions</p>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <h3>Net Points</h3>
+              <div class="value highlight">
+                {{ analytics.total_net_points }}
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <h3>Average Net Points / GW</h3>
+              <div class="value">{{ analytics.average_points }}</div>
+            </div>
+
+            <div class="stat-card">
+              <h3>Best Gameweek</h3>
+              <div class="value highlight">
+                GW{{ analytics.best_gameweek.gameweek }}
+              </div>
+              <p>{{ analytics.best_gameweek.points }} points</p>
+            </div>
+
+            <div class="stat-card">
+              <h3>Worst Gameweek</h3>
+              <div class="value">GW{{ analytics.worst_gameweek.gameweek }}</div>
+              <p>{{ analytics.worst_gameweek.points }} points</p>
+            </div>
+          </div>
+          <div class="stat-card">
+              <h3>Consistency (Std. Dev.)</h3>
+              <div class="value">
+                  {{ analytics.consistency_std }}
+              </div>
+              <p>Lower means more consistent</p>
+          </div>
+        </section>
+        <!-- GAMEWEEK PERFORMANCE TRENDS -->
+        <section class="chart-section">
+            <h2>Gameweek Performance Trends</h2>
+            <p>Net points and changes compared with the previous gameweek</p>
+
+            <div class="trends-table-wrapper">
+                <table class="trends-table">
+                    <thead>
+                        <tr>
+                            <th>Gameweek</th>
+                            <th>Net Points</th>
+                            <th>Change</th>
+                            <th>Trend</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for gw in performance_trends %}
+                        <tr>
+                            <td>
+                                GW{{ gw.gameweek }}
+                            </td>
+
+                            <td>
+                                {{ gw.points }}
+                            </td>
+
+                            <td>
+                                {% if gw.change is none %}
+                                    —
+                                {% elif gw.change > 0 %}
+                                    <span class="trend-up">
+                                        +{{ gw.change }}
+                                    </span>
+                                {% elif gw.change < 0 %}
+                                    <span class="trend-down">
+                                        {{ gw.change }}
+                                    </span>
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {% if gw.change is none %}
+                                    First Gameweek
+                                {% elif gw.change > 0 %}
+                                    <span class="trend-up">
+                                        ↑ Improved
+                                    </span>
+                                {% elif gw.change < 0 %}
+                                    <span class="trend-down">
+                                        ↓ Declined
+                                    </span>
+                                {% else %}
+                                    → Unchanged
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
         <!-- GAMEWEEK PERFORMANCE CHART -->
         <section class="chart-section">
           <h2>Gameweek Performance</h2>
@@ -116,6 +220,7 @@
             <canvas id="cumulativeChart"></canvas>
           </div>
         </section>
+
       </main>
     </div>
     <!-- Chart.js Library -->

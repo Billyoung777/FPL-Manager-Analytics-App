@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request
 from database.db import get_connection
+from database.manager_analytics import calculate_manager_analytics
 
 app = Flask(__name__)
 
@@ -41,6 +42,14 @@ def manager_dashboard():
 
     if manager_id <= 0:
         return "Invalid manager ID", 400
+
+    try:
+        analytics = calculate_manager_analytics(
+            manager_id,
+            "2026/27"
+        )
+    except ValueError:
+        return "Manager analytics not available", 404
 
     connection = get_connection()
     managers = connection.execute(
@@ -132,7 +141,9 @@ def manager_dashboard():
             gameweek_points=gameweek_points,
             cumulative_points=cumulative_points,
             managers=managers,
-            selected_manager_id=manager_id
+            selected_manager_id=manager_id,
+            analytics=analytics,
+            performance_trends=analytics["performance_trends"]
         )
 
 

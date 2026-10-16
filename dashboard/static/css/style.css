@@ -177,3 +177,41 @@ body {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
+/* Gameweek Performance Trends */
+
+.trends-table-wrapper {
+    overflow-x: auto;
+    margin-top: 20px;
+}
+
+.trends-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.trends-table th,
+.trends-table td {
+    padding: 14px;
+    text-align: left;
+}
+
+.trends-table th {
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.trends-table tbody tr {
+    border-top: 1px solid #334155;
+}
+
+.trends-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.trend-up {
+    color: #22c55e;
+}
+
+.trend-down {
+    color: #ef4444;
+}

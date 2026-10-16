@@ -1,4 +1,4 @@
-
+import statistics
 from database.manager_repository import get_manager
 from database.gameweek_repository import get_manager_gameweeks
 
@@ -36,8 +36,36 @@ def calculate_manager_analytics(manager_id, season):
     total_points = sum(gw["points"] for gw in net_scores)
     average_points = total_points / len(net_scores)
 
+    points_list = [gw["points"] for gw in net_scores]
+
+    consistency_std = round(
+        statistics.pstdev(points_list), 2
+    )
+
     best_gw = max(net_scores, key=lambda gw: gw["points"])
     worst_gw = min(net_scores, key=lambda gw: gw["points"])
+
+    # Calculate gameweek-to-gameweek performance changes
+    performance_trends = []
+
+    for index, gw in enumerate(net_scores):
+        previous_points = (
+            net_scores[index - 1]["points"]
+            if index > 0
+            else None
+        )
+
+        change = (
+            gw["points"] - previous_points
+            if previous_points is not None
+            else None
+        )
+
+        performance_trends.append({
+            "gameweek": gw["gameweek"],
+            "points": gw["points"],
+            "change": change
+        })
 
     return {
         "manager_id": manager_id,
@@ -46,8 +74,10 @@ def calculate_manager_analytics(manager_id, season):
         "gameweeks": len(net_scores),
         "total_net_points": total_points,
         "average_points": round(average_points, 2),
+        "consistency_std": consistency_std,
         "best_gameweek": best_gw,
-        "worst_gameweek": worst_gw
+        "worst_gameweek": worst_gw,
+        "performance_trends": performance_trends
     }
 
 
