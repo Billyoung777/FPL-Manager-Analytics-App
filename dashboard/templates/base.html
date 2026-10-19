@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#10111d">
+  <title>{% block title %}DiskiIQ{% endblock %} | Fantasy Football Intelligence</title>
+  <link rel="stylesheet" href="{{ url_for('static',filename='css/style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+
+<body>
+  {% if show_sidebar|default(true) %}
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Main navigation">
+      <a class="brand"
+        href="{{ url_for('manager_dashboard', id=active_manager_id) if active_manager_id else url_for('home') }}">
+        <span class="brand-mark">D<span>+</span></span>
+        <span><strong>Diski<span class="green">IQ</span></strong><small>FPL Intelligence</small></span>
+      </a>
+      <nav aria-label="Main">
+        <p class="nav-heading">OVERVIEW</p>
+        <a class="nav-link {% if active_page == 'dashboard' %}active{% endif %}"
+          href="{{ url_for('manager_dashboard', id=active_manager_id) if active_manager_id else url_for('home') }}"><span
+            class="nav-icon">▦</span>Dashboard</a>
+        <a class="nav-link {% if active_page == 'profile' %}active{% endif %}"
+          href="{{ url_for('manager_profile', manager_id=active_manager_id) if active_manager_id else url_for('home') }}"><span
+            class="nav-icon">♙</span>Manager Profile</a>
+        <span class="nav-link disabled" aria-disabled="true"><span class="nav-icon">♧</span>My Team
+          <small>Planned</small></span>
+        <a class="nav-link {% if active_page == 'analytics' %}active{% endif %}"
+          href="{{ url_for('manager_dashboard', id=active_manager_id) if active_manager_id else url_for('home') }}#performance"><span
+            class="nav-icon">▥</span>Performance Analytics</a>
+        <p class="nav-heading">COMPETE</p>
+        <a class="nav-link {% if active_page == 'leagues' %}active{% endif %}"
+          href="{{ url_for('manager_hub', id=active_manager_id) if active_manager_id else url_for('home') }}"><span
+            class="nav-icon">♧</span>My Mini-Leagues</a>
+        <span class="nav-link disabled" aria-disabled="true"><span class="nav-icon">⇄</span>Compare Managers
+          <small>Planned</small></span>
+        <span class="nav-link disabled" aria-disabled="true"><span class="nav-icon">♛</span>League Leaderboard
+          <small>Planned</small></span>
+        <p class="nav-heading">TOOLS</p>
+        <span class="nav-link disabled" aria-disabled="true"><span class="nav-icon">⇆</span>Transfers &amp; Chips
+          <small>Planned</small></span>
+      </nav>
+      <div class="sidebar-bottom">
+        {% if active_manager_id %}
+        <a class="profile-mini" href="{{ url_for('manager_profile',manager_id=active_manager_id) }}">
+          <span class="avatar">{{ (active_manager_name|default('M',true))[0]|upper }}</span>
+          <span class="profile-mini-text"><strong>{{ active_manager_name|default('Manager',true) }}</strong><small>{{
+              active_team_name|default('FPL team',true) }}</small><small>ID {{ active_manager_id }}</small></span>
+        </a>
+        {% endif %}
+        <a class="change-manager" href="{{ url_for('home') }}">⇄ &nbsp; Change Manager ID</a>
+      </div>
+    </aside>
+    <div class="app-main">
+      <header class="topbar">
+        <div class="topbar-title">DiskiIQ <span>/ {% block section_name %}Dashboard{% endblock %}</span></div><a
+          href="{{ url_for('home') }}" class="topbar-link">Switch Manager ↗</a>
+      </header>
+      <main class="main-content">{% block content %}{% endblock %}</main>
+    </div>
+  </div>
+  {% else %}
+  {% block standalone %}{% endblock %}
+  {% endif %}
+  {% block scripts %}{% endblock %}
+</body>
+
+</html>

@@ -1,46 +1,28 @@
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FPL Manager Analytics</title>
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-    <main class="entry-page">
-        <section class="entry-card">
-            <h1>NoDNA Just DiskiAura</h1>
-            <h2>FPL Manager Analytics</h2>
-
-            <p>
-                Discover your mini-leagues and compare
-                your FPL performance with other managers.
-            </p>
-
-            <form action="/enter" method="GET"
-                <label for="manager-id">FPL Manager ID</label>
-
-                <input
-                    type="number"
-                    id="manager-id"
-                    name="id"
-                    min="1"
-                    required
-                    placeholder="e.g. 1053858"
-                >
-
-                <button type="submit">
-                    Continue with Manager ID
-                </button>
-            </form>
-
-            <p class="entry-note">
-                Your Manager ID is public.
-                This does not sign you into your FPL account.
-            </p>
-        </section>
-    </main>
-</body>
-</html>
+{% extends "base.html" %}
+{% set show_sidebar = false %}
+{% block title %}Connect your FPL team{% endblock %}
+{% block standalone %}
+<main class="entry-page">
+  <section class="entry-card">
+    <div class="entry-brand"><span class="brand-mark">D<span>+</span></span><strong>Diski<span
+          class="green">IQ</span></strong></div>
+    <h1>Connect your FPL team</h1>
+    <p class="entry-description">Enter your public FPL Manager ID to open your personalized fantasy football dashboard.
+    </p>
+    <div class="help-panel"><strong>How to find your Manager ID</strong>
+      <ol>
+        <li>Open <a href="https://fantasy.premierleague.com/" target="_blank" rel="noopener noreferrer">Fantasy Premier
+            League</a> and view your team.</li>
+        <li>Open your points or gameweek history page.</li>
+        <li>Find the number in a URL like <code>/entry/1234567/</code>. Enter only the number.</li>
+      </ol>
+    </div>
+    <form action="{{ url_for('enter_manager') }}" method="get" class="entry-form">
+      <label for="manager-id">FPL Manager ID</label>
+      <input id="manager-id" name="id" type="number" min="1" inputmode="numeric" placeholder="e.g. 1053858" required>
+      <button type="submit" class="btn btn-primary">Open my dashboard →</button>
+    </form>
+    <p class="entry-note">A Manager ID is public. This does not sign you into an FPL account.</p>
+  </section>
+</main>
+{% endblock %}

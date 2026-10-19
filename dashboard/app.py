@@ -315,6 +315,16 @@ def manager_dashboard():
     finally:
         connection.close()
 
+@app.route("/profile/<int:manager_id>")
+def manager_profile(manager_id):
+    if manager_id <= 0:
+        return "Invalid FPL Manager ID", 400
+    manager = get_manager(manager_id)
+    if manager is None:
+        return "Manager not found", 404
+    return render_template("profile.html", manager=manager)
+
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

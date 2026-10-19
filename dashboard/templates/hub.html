@@ -1,42 +1,29 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Mini-Leagues | FPL Analytics</title>
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-    <main class="entry-page">
-        <section class="entry-card">
-            <h1>{{ manager.team_name }}</h1>
-            <p>Manager: {{ manager.manager_name }}</p>
-
-            <h2>My Mini-Leagues</h2>
-
-            {% if leagues %}
-                <ul>
-                    {% for league in leagues %}
-                        <li>
-                            <a href="{{ url_for(
-                                'league_dashboard',
-                                league_id=league.league_id,
-                                manager_id=manager.manager_id
-                            ) }}">
-                                {{ league.league_name }}
-                            </a>
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>No classic mini-leagues found.</p>
-            {% endif %}
-
-            <a href="{{ url_for('manager_dashboard', id=manager.manager_id) }}">
-                View My Performance Dashboard
-            </a>
-        </section>
-    </main>
-</body>
-</html>
+{% extends "base.html" %}
+{% set active_page = 'leagues' %}
+{% set active_manager_id = manager.manager_id %}
+{% set active_manager_name = manager.manager_name %}
+{% set active_team_name = manager.team_name %}
+{% block title %}My Mini-Leagues{% endblock %}
+{% block section_name %}My Mini-Leagues{% endblock %}
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">COMPETE</p>
+        <h1>My Mini-Leagues</h1>
+        <p>Classic leagues associated with {{ manager.manager_name }}</p>
+    </div><a class="btn btn-outline" href="{{ url_for('manager_dashboard',id=manager.manager_id) }}">← Dashboard</a>
+</header>
+<div class="panel">
+    <div class="panel-heading">
+        <div>
+            <h2>Classic Mini-Leagues</h2>
+            <p>{{ leagues|length }} league{{ '' if leagues|length == 1 else 's' }} found</p>
+        </div>
+    </div>
+    {% if leagues %}<div class="league-list">{% for league in leagues %}<a class="league-item"
+            href="{{ url_for('league_dashboard',league_id=league.league_id,manager_id=manager.manager_id) }}"><span
+                class="league-symbol">♛</span><span><strong>{{ league.league_name }}</strong><small>League ID {{
+                    league.league_id }}</small></span><span class="league-arrow">→</span></a>{% endfor %}</div>{% else
+    %}<p>No classic mini-leagues found for this manager.</p>{% endif %}
+</div>
+{% endblock %}

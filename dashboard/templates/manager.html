@@ -1,310 +1,41 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>NoDNA Just DiskiAura | FPL Analytics</title>
-
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}"
-    />
-  </head>
-  <body>
-    <div class="dashboard">
-      <!-- SIDEBAR -->
-      <aside class="sidebar">
-        <h2>NoDNA</h2>
-        <p>Just DiskiAura</p>
-
-        <nav>
-          <a href="{{ url_for('manager_dashboard') }}" class="active">
-            Dashboard
-          </a>
-          <a href="#" aria-disabled="true"> Manager Analytics (Coming Soon) </a>
-          <a href="#" aria-disabled="true"> Mini-Leagues (Coming Soon) </a>
-          <a href="#" aria-disabled="true"> Transfers & Chips (Coming Soon) </a>
-        </nav>
-      </aside>
-
-      <!-- MAIN CONTENT -->
-      <main class="main-content">
-        <header class="page-header">
-          <h1>FPL Manager Dashboard</h1>
-          <p>Season 2026/27 | Fantasy Premier League Analytics</p>
-        </header>
-
-        <!-- MANAGER SELECTOR -->
-        <div class="manager-selector">
-          <form action="{{ url_for('manager_dashboard') }}" method="GET">
-            <label for="manager-select">Select FPL Manager</label>
-
-            <select id="manager-select" name="id" onchange="this.form.submit()">
-              {% for manager in managers %}
-              <!-- prettier-ignore -->
-              <option
-                value="{{ manager[0] }}" {%if manager[0] == selected_manager_id%}selected{%endif%}
-              >
-                {{ manager[2] }} — {{ manager[1] }}
-              </option>
-              {% endfor %}
-            </select>
-          </form>
-        </div>
-
-        <!-- MANAGER INFORMATION -->
-        <section class="stats-grid">
-          <div class="stat-card">
-            <h3>Team Name</h3>
-            <div class="value">{{ team_name }}</div>
-          </div>
-
-          <div class="stat-card">
-            <h3>Manager</h3>
-            <div class="value">{{ manager_name }}</div>
-          </div>
-
-          <div class="stat-card">
-            <h3>Total Points</h3>
-            <div class="value highlight">{{ total_points }}</div>
-          </div>
-
-          <div class="stat-card">
-            <h3>Gameweeks Recorded</h3>
-            <div class="value">{{ gameweeks }}</div>
-          </div>
-          <!-- AVERAGE GAMEWEEK POINTS -->
-          <div class="stat-card">
-            <h3>Average Points / GW</h3>
-            <div class="value">
-              {{ average_points if average_points is not none else 0 }}
-            </div>
-          </div>
-
-          <!-- HIGHEST GAMEWEEK SCORE -->
-          <div class="stat-card">
-            <h3>Highest GW Score</h3>
-            <div class="value highlight">
-              {{ highest_points if highest_points is not none else 0 }}
-            </div>
-          </div>
-
-          <!-- LOWEST GAMEWEEK SCORE -->
-          <div class="stat-card">
-            <h3>Lowest GW Score</h3>
-            <div class="value">
-              {{ lowest_points if lowest_points is not none else 0 }}
-            </div>
-          </div>
-        </section>
-                <!-- MANAGER PERFORMANCE INSIGHTS -->
-        <section class="chart-section">
-          <h2>Manager Performance Insights</h2>
-          <p>Season performance after transfer point deductions</p>
-
-          <div class="stats-grid">
-            <div class="stat-card">
-              <h3>Net Points</h3>
-              <div class="value highlight">
-                {{ analytics.total_net_points }}
-              </div>
-            </div>
-
-            <div class="stat-card">
-              <h3>Average Net Points / GW</h3>
-              <div class="value">{{ analytics.average_points }}</div>
-            </div>
-
-            <div class="stat-card">
-              <h3>Best Gameweek</h3>
-              <div class="value highlight">
-                GW{{ analytics.best_gameweek.gameweek }}
-              </div>
-              <p>{{ analytics.best_gameweek.points }} points</p>
-            </div>
-
-            <div class="stat-card">
-              <h3>Worst Gameweek</h3>
-              <div class="value">GW{{ analytics.worst_gameweek.gameweek }}</div>
-              <p>{{ analytics.worst_gameweek.points }} points</p>
-            </div>
-          </div>
-          <div class="stat-card">
-              <h3>Consistency (Std. Dev.)</h3>
-              <div class="value">
-                  {{ analytics.consistency_std }}
-              </div>
-              <p>Lower means more consistent</p>
-          </div>
-        </section>
-        <!-- GAMEWEEK PERFORMANCE TRENDS -->
-        <section class="chart-section">
-            <h2>Gameweek Performance Trends</h2>
-            <p>Net points and changes compared with the previous gameweek</p>
-
-            <div class="trends-table-wrapper">
-                <table class="trends-table">
-                    <thead>
-                        <tr>
-                            <th>Gameweek</th>
-                            <th>Net Points</th>
-                            <th>Change</th>
-                            <th>Trend</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        {% for gw in performance_trends %}
-                        <tr>
-                            <td>
-                                GW{{ gw.gameweek }}
-                            </td>
-
-                            <td>
-                                {{ gw.points }}
-                            </td>
-
-                            <td>
-                                {% if gw.change is none %}
-                                    —
-                                {% elif gw.change > 0 %}
-                                    <span class="trend-up">
-                                        +{{ gw.change }}
-                                    </span>
-                                {% elif gw.change < 0 %}
-                                    <span class="trend-down">
-                                        {{ gw.change }}
-                                    </span>
-                                {% else %}
-                                    0
-                                {% endif %}
-                            </td>
-
-                            <td>
-                                {% if gw.change is none %}
-                                    First Gameweek
-                                {% elif gw.change > 0 %}
-                                    <span class="trend-up">
-                                        ↑ Improved
-                                    </span>
-                                {% elif gw.change < 0 %}
-                                    <span class="trend-down">
-                                        ↓ Declined
-                                    </span>
-                                {% else %}
-                                    → Unchanged
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </section>
-        <!-- GAMEWEEK PERFORMANCE CHART -->
-        <section class="chart-section">
-          <h2>Gameweek Performance</h2>
-          <p>Points scored across recorded gameweeks</p>
-
-          <div class="chart-container">
-            <canvas id="gameweekChart"></canvas>
-          </div>
-        </section>
-
-        <!-- CUMULATIVE POINTS CHART -->
-        <section class="chart-section">
-          <h2>Cumulative Points</h2>
-          <p>Total points accumulated throughout the season</p>
-          <div class="chart-container">
-            <canvas id="cumulativeChart"></canvas>
-          </div>
-        </section>
-
-      </main>
-    </div>
-    <!-- Chart.js Library -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
-
-    <!-- Jinja generates JSON before the browser runs JavaScript. -->
-    <script id="gameweek-data" type="application/json">
-      {{ {"labels": gameweek_labels, "points": gameweek_points} | tojson }}
-    </script>
-
-    <script>
-      const gameweekData = JSON.parse(
-        document.getElementById("gameweek-data").textContent,
-      );
-      const gameweekLabels = gameweekData.labels;
-      const gameweekPoints = gameweekData.points;
-
-      // Calculate the running total from the same SQLite-backed scores.
-      let runningTotal = 0;
-      const cumulativePoints = gameweekPoints.map((points) => {
-        runningTotal += Number(points);
-        return runningTotal;
-      });
-
-      const sharedOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { labels: { color: "#f8fafc" } },
-        },
-        scales: {
-          x: {
-            ticks: { color: "#94a3b8" },
-            grid: { color: "#24364d" },
-          },
-          y: {
-            beginAtZero: true,
-            ticks: { color: "#94a3b8" },
-            grid: { color: "#24364d" },
-          },
-        },
-      };
-
-      new Chart(document.getElementById("gameweekChart"), {
-        type: "line",
-        data: {
-          labels: gameweekLabels,
-          datasets: [
-            {
-              label: "Net Gameweek Points",
-              data: gameweekPoints,
-              borderColor: "#38bdf8",
-              backgroundColor: "rgba(56, 189, 248, 0.15)",
-              borderWidth: 3,
-              pointRadius: 5,
-              pointBackgroundColor: "#22c55e",
-              tension: 0.3,
-              fill: true,
-            },
-          ],
-        },
-        options: sharedOptions,
-      });
-
-      new Chart(document.getElementById("cumulativeChart"), {
-        type: "line",
-        data: {
-          labels: gameweekLabels,
-          datasets: [
-            {
-              label: "Cumulative Net Points",
-              data: cumulativePoints,
-              borderColor: "#22c55e",
-              backgroundColor: "rgba(34, 197, 94, 0.12)",
-              borderWidth: 3,
-              pointRadius: 5,
-              pointBackgroundColor: "#38bdf8",
-              tension: 0.3,
-              fill: true,
-            },
-          ],
-        },
-        options: sharedOptions,
-      });
-    </script>
-  </body>
-</html>
+{% extends "base.html" %}
+{% set active_page = 'dashboard' %}
+{% set active_manager_id = selected_manager_id %}
+{% set active_manager_name = manager_name %}
+{% set active_team_name = team_name %}
+{% block title %}Dashboard{% endblock %}
+{% block section_name %}Dashboard{% endblock %}
+{% block content %}
+<header class="page-header"><div><p class="eyebrow">SEASON 2026/27</p><h1>Manager Dashboard</h1><p>Gameweek performance and season analytics</p></div><a class="btn btn-outline" href="{{ url_for('manager_profile',manager_id=selected_manager_id) }}">View Profile ↗</a></header>
+<div class="welcome-card"><div class="avatar avatar-large">{{ manager_name[0]|upper }}</div><div><span class="eyebrow">CURRENT MANAGER</span><h2>{{ manager_name }}</h2><p>{{ team_name }} · ID {{ selected_manager_id }}</p></div><a class="btn btn-outline" href="{{ url_for('manager_hub',id=selected_manager_id) }}">My Mini-Leagues →</a></div>
+<section class="stats-grid" aria-label="Season statistics">
+  <article class="stat-card"><h3>Total Net Points</h3><div class="value highlight">{{ total_points }}</div><p>After transfer deductions</p></article>
+  <article class="stat-card"><h3>Gameweeks Recorded</h3><div class="value">{{ gameweeks }}</div><p>Season 2026/27</p></article>
+  <article class="stat-card"><h3>Average Net Points / GW</h3><div class="value">{{ average_points if average_points is not none else 0 }}</div></article>
+  <article class="stat-card"><h3>Highest GW Score</h3><div class="value highlight">{{ highest_points if highest_points is not none else 0 }}</div></article>
+  <article class="stat-card"><h3>Lowest GW Score</h3><div class="value">{{ lowest_points if lowest_points is not none else 0 }}</div></article>
+  <article class="stat-card"><h3>Consistency (Std. Dev.)</h3><div class="value">{{ analytics.consistency_std }}</div><p>Lower means more consistent</p></article>
+</section>
+<section class="panel" id="performance"><div class="panel-heading"><div><h2>Performance Insights</h2><p>Best and worst gameweeks</p></div></div>
+<div class="insight-grid"><div class="insight"><span>Best Gameweek</span><strong>GW{{ analytics.best_gameweek.gameweek }}</strong><small>{{ analytics.best_gameweek.points }} net points</small></div><div class="insight"><span>Worst Gameweek</span><strong>GW{{ analytics.worst_gameweek.gameweek }}</strong><small>{{ analytics.worst_gameweek.points }} net points</small></div></div></section>
+<section class="charts-grid"><div class="panel"><h2>Gameweek Performance</h2><p>Net points per recorded gameweek</p><div class="chart-container"><canvas id="gameweekChart"></canvas></div></div><div class="panel"><h2>Cumulative Points</h2><p>Running total of net points</p><div class="chart-container"><canvas id="cumulativeChart"></canvas></div></div></section>
+<section class="panel"><h2>Gameweek Performance Trends</h2><p>Changes compared with the previous gameweek</p><div class="trends-table-wrapper"><table class="trends-table"><thead><tr><th>Gameweek</th><th>Net Points</th><th>Change</th><th>Trend</th></tr></thead><tbody>
+{% for gw in performance_trends %}<tr><td>GW{{ gw.gameweek }}</td><td>{{ gw.points }}</td><td>{% if gw.change is none %}—{% elif gw.change > 0 %}<span class="trend-up">+{{ gw.change }}</span>{% elif gw.change < 0 %}<span class="trend-down">{{ gw.change }}</span>{% else %}0{% endif %}</td><td>{% if gw.change is none %}First Gameweek{% elif gw.change > 0 %}<span class="trend-up">↑ Improved</span>{% elif gw.change < 0 %}<span class="trend-down">↓ Declined</span>{% else %}→ Unchanged{% endif %}</td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+<script id="gameweek-data" type="application/json">{{ {"labels": gameweek_labels, "points": gameweek_points} | tojson }}</script>
+<script>
+(function () {
+  if (typeof Chart === 'undefined') return;
+  const payload = JSON.parse(document.getElementById('gameweek-data').textContent);
+  const cumulative = []; let running = 0;
+  payload.points.forEach(p => { running += Number(p); cumulative.push(running); });
+  const options = {responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#dce4ef'}}},scales:{x:{ticks:{color:'#9ca3af'},grid:{color:'#292d3e'}},y:{beginAtZero:true,ticks:{color:'#9ca3af'},grid:{color:'#292d3e'}}}};
+  function draw(id, label, values, color) { new Chart(document.getElementById(id),{type:'line',data:{labels:payload.labels,datasets:[{label,data:values,borderColor:color,backgroundColor:'rgba(34,197,94,.09)',borderWidth:3,pointRadius:4,tension:.3,fill:true}]},options}); }
+  draw('gameweekChart','Net Gameweek Points',payload.points,'#22c55e');
+  draw('cumulativeChart','Cumulative Net Points',cumulative,'#60a5fa');
+})();
+</script>
+{% endblock %}
