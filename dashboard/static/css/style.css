@@ -278,3 +278,147 @@ body {
 .trend-down {
     color: #ef4444;
 }
+
+/* ========================================
+   FPL MANAGER ID ONBOARDING
+   ======================================== */
+
+:root {
+    --primary: #22c55e;
+    --accent: #22c55e;
+    --background: #0b0d17;
+    --sidebar: #10121e;
+    --card: #171a29;
+    --text: #f8fafc;
+    --muted: #9ca3af;
+}
+
+/* Onboarding page */
+
+.entry-page {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+    background:
+        radial-gradient(
+            circle at 50% 0%,
+            rgba(34, 197, 94, 0.10),
+            transparent 45%
+        ),
+        var(--background);
+}
+
+.entry-card {
+    width: 100%;
+    max-width: 480px;
+    padding: 42px 36px;
+    background: var(--card);
+    border: 1px solid #2b3042;
+    border-radius: 20px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.25);
+}
+
+.entry-card h1 {
+    color: var(--primary);
+    font-size: 25px;
+    margin: 0 0 12px;
+    letter-spacing: -0.5px;
+}
+
+.entry-card h2 {
+    font-size: 29px;
+    line-height: 1.2;
+    margin: 0 0 16px;
+    letter-spacing: -0.8px;
+}
+
+.entry-card p {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.entry-card form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 30px;
+}
+
+.entry-card label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.entry-card input[type="number"] {
+    width: 100%;
+    min-height: 50px;
+    padding: 14px 16px;
+    background: #0e1120;
+    border: 1px solid #34394b;
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 16px;
+    transition: border-color 0.2s;
+}
+
+.entry-card input[type="number"]:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+}
+
+.entry-card button {
+    min-height: 50px;
+    padding: 13px 18px;
+    border: none;
+    border-radius: 10px;
+    background: var(--primary);
+    color: #06120a;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.entry-card button:hover {
+    background: #4ade80;
+    transform: translateY(-1px);
+}
+
+.entry-card button:focus-visible,
+.entry-card a:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 3px;
+}
+
+.entry-note {
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid #2b3042;
+    font-size: 12px !important;
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    .entry-page {
+        padding: 20px 14px;
+    }
+
+    .entry-card {
+        padding: 30px 22px;
+        border-radius: 16px;
+    }
+
+    .entry-card h1 {
+        font-size: 22px;
+    }
+
+    .entry-card h2 {
+        font-size: 25px;
+    }
+}

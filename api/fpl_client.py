@@ -35,6 +35,20 @@ class FPLClient:
 # Manager data (Manager ID, Team name, Player name)
     def get_manager(self, manager_id):
         return self.get(f"entry/{manager_id}/")
+
+# Retrieve the classic leagues joined by an FPL manager
+    def get_manager_leagues(self, manager_id):
+        manager_data = self.get_manager(manager_id)
+
+        leagues = manager_data.get("leagues", {}).get("classic", [])
+
+        return [
+            {
+                "league_id": league["id"],
+                "league_name": league["name"]
+            }
+            for league in leagues
+        ]
     
 # Retrieve classic mini-league standings
     def get_league_standings(self, league_id, page=1):

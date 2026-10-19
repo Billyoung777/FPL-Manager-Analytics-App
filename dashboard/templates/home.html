@@ -1,0 +1,46 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPL Manager Analytics</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="entry-page">
+        <section class="entry-card">
+            <h1>NoDNA Just DiskiAura</h1>
+            <h2>FPL Manager Analytics</h2>
+
+            <p>
+                Discover your mini-leagues and compare
+                your FPL performance with other managers.
+            </p>
+
+            <form action="/enter" method="GET"
+                <label for="manager-id">FPL Manager ID</label>
+
+                <input
+                    type="number"
+                    id="manager-id"
+                    name="id"
+                    min="1"
+                    required
+                    placeholder="e.g. 1053858"
+                >
+
+                <button type="submit">
+                    Continue with Manager ID
+                </button>
+            </form>
+
+            <p class="entry-note">
+                Your Manager ID is public.
+                This does not sign you into your FPL account.
+            </p>
+        </section>
+    </main>
+</body>
+</html>

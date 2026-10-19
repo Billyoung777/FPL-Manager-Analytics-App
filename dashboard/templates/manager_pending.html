@@ -1,0 +1,34 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>Manager Dashboard | NoDNA Just DiskiAura</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="pending-dashboard">
+        <h1>{{ manager.team_name }}</h1>
+        <p>Manager: {{ manager.manager_name }}</p>
+
+        <h2>Your dashboard is ready!</h2>
+        <p>
+            Your FPL profile has been registered.
+            Gameweek analytics are not available yet.
+        </p>
+
+        <a href="{{ url_for('manager_hub', id=manager_id) }}">
+            View My Mini-Leagues
+        </a>
+
+        <p>
+            <a href="{{ url_for('home') }}">
+                Change Manager ID
+            </a>
+        </p>
+    </main>
+</body>
+</html>

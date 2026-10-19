@@ -1,59 +1,43 @@
 
-from unittest.mock import patch, Mock
-import requests
+import unittest
+from unittest.mock import patch
 
 from tracker.mini_league_tracker import get_mini_league
 
 
-print("=" * 60)
-print("MINI-LEAGUE ERROR HANDLING VALIDATION")
-print("=" * 60)
+class TestMiniLeagueErrors(unittest.TestCase):
+
+    @patch("tracker.mini_league_tracker.FPLClient")
+    def test_invalid_league_id(self, mock_client):
+        mock_client.return_value.get_league_standings.side_effect = (
+            RuntimeError("FPL API returned an HTTP error: 404 Not Found")
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "404 Not Found"):
+            get_mini_league(999999999)
+
+        mock_client.return_value.get_league_standings.assert_called_once_with(
+            999999999, 1
+        )
+
+    @patch("tracker.mini_league_tracker.FPLClient")
+    def test_api_connection_failure(self, mock_client):
+        mock_client.return_value.get_league_standings.side_effect = (
+            RuntimeError("FPL API request failed: Unable to connect")
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "Unable to connect"):
+            get_mini_league(1701837)
+
+    @patch("tracker.mini_league_tracker.FPLClient")
+    def test_api_timeout(self, mock_client):
+        mock_client.return_value.get_league_standings.side_effect = (
+            RuntimeError("FPL API request timed out")
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "timed out"):
+            get_mini_league(1701837)
 
 
-# TEST 1: Invalid league ID (HTTP 404)
-mock_response = Mock()
-mock_response.raise_for_status.side_effect = (
-    requests.exceptions.HTTPError("404 Not Found")
-)
-
-with patch(
-    "tracker.mini_league_tracker.requests.get",
-    return_value=mock_response
-):
-    try:
-        get_mini_league(999999999)
-        raise AssertionError("Expected HTTPError")
-    except requests.exceptions.HTTPError:
-        print("Invalid league ID handling: PASS")
-
-
-# TEST 2: API connection failure
-with patch(
-    "tracker.mini_league_tracker.requests.get",
-    side_effect=requests.exceptions.ConnectionError(
-        "Unable to connect to FPL API"
-    )
-):
-    try:
-        get_mini_league(1701837)
-        raise AssertionError("Expected ConnectionError")
-    except requests.exceptions.ConnectionError:
-        print("API connection failure handling: PASS")
-
-
-# TEST 3: API timeout
-with patch(
-    "tracker.mini_league_tracker.requests.get",
-    side_effect=requests.exceptions.Timeout(
-        "Request timed out"
-    )
-):
-    try:
-        get_mini_league(1701837)
-        raise AssertionError("Expected Timeout")
-    except requests.exceptions.Timeout:
-        print("API timeout handling: PASS")
-
-
-print("=" * 60)
-print("MINI-LEAGUE ERROR HANDLING VALIDATION: PASS")
+if __name__ == "__main__":
+    unittest.main()

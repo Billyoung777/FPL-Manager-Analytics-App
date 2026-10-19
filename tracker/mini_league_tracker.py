@@ -1,31 +1,18 @@
-
 import requests
+from api.fpl_client import FPLClient
 
 BASE_URL = "https://fantasy.premierleague.com/api"
 
 LEAGUE_IDS = [1701837, 1840079]
 
-
-
-def get_mini_league(league_id):
+def get_mini_league(league_id, max_pages=None):
+    client = FPLClient()
     all_managers = []
     page = 1
     league_info = None
 
     while True:
-        url = (
-            f"{BASE_URL}/leagues-classic/"
-            f"{league_id}/standings/"
-        )
-
-        response = requests.get(
-            url,
-            params={"page_standings": page},
-            timeout=30
-        )
-        response.raise_for_status()
-
-        data = response.json()
+        data = client.get_league_standings(league_id, page)
 
         if league_info is None:
             league_info = data["league"]
@@ -36,6 +23,9 @@ def get_mini_league(league_id):
         if not standings.get("has_next", False):
             break
 
+        if max_pages is not None and page >= max_pages:
+            break
+
         page += 1
 
     return {
@@ -44,7 +34,6 @@ def get_mini_league(league_id):
             "results": all_managers
         }
     }
-
 
 
 def main():

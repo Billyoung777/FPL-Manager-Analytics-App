@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Mini-Leagues | FPL Analytics</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="entry-page">
+        <section class="entry-card">
+            <h1>{{ manager.team_name }}</h1>
+            <p>Manager: {{ manager.manager_name }}</p>
+
+            <h2>My Mini-Leagues</h2>
+
+            {% if leagues %}
+                <ul>
+                    {% for league in leagues %}
+                        <li>
+                            <a href="{{ url_for(
+                                'league_dashboard',
+                                league_id=league.league_id,
+                                manager_id=manager.manager_id
+                            ) }}">
+                                {{ league.league_name }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No classic mini-leagues found.</p>
+            {% endif %}
+
+            <a href="{{ url_for('manager_dashboard', id=manager.manager_id) }}">
+                View My Performance Dashboard
+            </a>
+        </section>
+    </main>
+</body>
+</html>

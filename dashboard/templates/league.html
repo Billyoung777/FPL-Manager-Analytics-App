@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ league.league_name }} | FPL Analytics</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="entry-page">
+        <section class="entry-card">
+            <h1>{{ league.league_name }}</h1>
+            <p>{{ members|length }} tracked managers</p>
+                <form
+                    action="{{ url_for('refresh_league', league_id=league.league_id) }}"
+                    method="POST"
+                >
+                    <input
+                        type="hidden"
+                        name="manager_id"
+                        value="{{ manager_id }}"
+                    >
+
+                    <button type="submit">
+                        Refresh League Members
+                    </button>
+                </form>
+                <p>
+                    Showing synchronized managers only.
+                    Large leagues may have additional members
+                    beyond the first two pages.
+                </p>
+
+            <h2>League Members</h2>
+
+            {% if members %}
+                <ul>
+                    {% for member in members %}
+                        <li>
+                            {{ member.team_name }}
+                            — {{ member.manager_name }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No members synchronized yet.</p>
+            {% endif %}
+
+            <a href="{{ url_for('manager_hub', id=manager_id) }}">
+                Back to My Mini-Leagues
+            </a>
+        </section>
+    </main>
+</body>
+</html>
