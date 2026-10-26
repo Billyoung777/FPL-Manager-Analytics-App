@@ -6,8 +6,72 @@
 {% block title %}Manager Profile{% endblock %}
 {% block section_name %}Manager Profile{% endblock %}
 {% block content %}
-<header class="page-header"><div><p class="eyebrow">YOUR FPL IDENTITY</p><h1>Manager Profile</h1><p>Public FPL manager details</p></div><a class="btn btn-outline" href="{{ url_for('manager_dashboard',id=manager.manager_id) }}">← Dashboard</a></header>
-<div class="profile-hero panel"><div class="avatar avatar-xl">{{ manager.manager_name[0]|upper }}</div><div><p class="eyebrow">MANAGER</p><h2>{{ manager.manager_name }}</h2><p>{{ manager.team_name }}</p><span class="profile-id">Manager ID: {{ manager.manager_id }}</span></div></div>
-<div class="panel"><h2>Team Identity</h2><div class="detail-row"><span>Manager Name</span><strong>{{ manager.manager_name }}</strong></div><div class="detail-row"><span>FPL Team Name</span><strong>{{ manager.team_name }}</strong></div><div class="detail-row"><span>Manager ID</span><strong>{{ manager.manager_id }}</strong></div></div>
-<div class="panel"><h2>Team Badge</h2><p>The profile currently uses an initial-based avatar. An official FPL badge or a custom badge upload can be added in a later milestone after implementing safe image storage and validation.</p><span class="pill">Badge upload planned</span></div>
+<header class="page-header">
+    <div>
+        <p class="eyebrow">YOUR FPL IDENTITY</p>
+        <h1>Manager Profile</h1>
+        <p>Public FPL manager details</p>
+    </div><a class="btn btn-outline" href="{{ url_for('manager_dashboard',id=manager.manager_id) }}">← Dashboard</a>
+</header>
+<div class="profile-hero panel">
+    <div class="avatar avatar-xl">{{ manager.manager_name[0]|upper }}</div>
+    <div>
+        <p class="eyebrow">MANAGER</p>
+        <h2>{{ manager.manager_name }}</h2>
+        <p>{{ manager.team_name }}</p><span class="profile-id">Manager ID: {{ manager.manager_id }}</span>
+    </div>
+</div>
+<div class="panel" id="live-stats" data-manager-id="{{ manager.manager_id }}">
+    <h2>Live FPL Statistics</h2>
+
+    <div class="detail-row">
+        <span>Overall Points</span>
+        <strong id="overall-points">
+            {{ fpl_data.get('summary_overall_points') if fpl_data else '—' }}
+        </strong>
+    </div>
+
+    <div class="detail-row">
+        <span>Overall Rank</span>
+        <strong id="overall-rank">
+            {% if fpl_data and fpl_data.get('summary_overall_rank') %}
+            {{ "{:,}".format(fpl_data.get('summary_overall_rank')) }}
+            {% else %}
+            —
+            {% endif %}
+        </strong>
+    </div>
+
+    <div class="detail-row">
+        <span>Latest Gameweek Points</span>
+        <strong id="event-points">
+            {{ fpl_data.get('summary_event_points') if fpl_data else '—' }}
+        </strong>
+    </div>
+
+    <div class="detail-row">
+        <span>Current Gameweek</span>
+        <strong id="current-event">
+            {{ 'GW' ~ fpl_data.get('current_event') if fpl_data and fpl_data.get('current_event') else '—' }}
+        </strong>
+    </div>
+
+    <p id="live-stats-status" role="status">
+        Connecting to live FPL data…
+    </p>
+</div>
+
+<script src="{{ url_for('static', filename='js/live_stats.js') }}" defer></script>
+<div class="panel">
+    <h2>Team Identity</h2>
+    <div class="detail-row"><span>Manager Name</span><strong>{{ manager.manager_name }}</strong></div>
+    <div class="detail-row"><span>FPL Team Name</span><strong>{{ manager.team_name }}</strong></div>
+    <div class="detail-row"><span>Manager ID</span><strong>{{ manager.manager_id }}</strong></div>
+</div>
+<div class="panel">
+    <h2>Team Badge</h2>
+    <p>The profile currently uses an initial-based avatar. An official FPL badge or a custom badge upload can be added
+        in a later milestone after implementing safe image storage and validation.</p><span class="pill">Badge upload
+        planned</span>
+</div>
 {% endblock %}

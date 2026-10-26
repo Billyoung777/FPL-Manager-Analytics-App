@@ -81,3 +81,24 @@ def get_manager_gameweeks(manager_id, season):
 
     finally:
         connection.close()
+
+def get_latest_gameweek_update(manager_id, season):
+    """
+    Return the latest saved gameweek update timestamp.
+    """
+
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute("""
+            SELECT MAX(last_updated)
+            FROM gameweek_performances
+            WHERE manager_id = ?
+              AND season = ?
+        """, (manager_id, season))
+
+        row = cursor.fetchone()
+        return row[0] if row else None
+
+    finally:
+        connection.close()

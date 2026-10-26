@@ -51,10 +51,17 @@ class TestDashboard(unittest.TestCase):
         def record_template(sender, template, context, **extra):
             captured.append(context)
 
-        with template_rendered.connected_to(record_template, app):
+
+        template_rendered.connect(record_template, app)
+        try:
             with patch(
                 "dashboard.app.calculate_manager_analytics"
-            ) as mock_analytics:
+            ) as mock_analytics, patch(
+                "dashboard.app.sync_gameweeks"
+            ), patch(
+                "dashboard.app.get_latest_gameweek_update",
+                return_value="2026-10-26 10:00:00"
+            ):
 
                 mock_analytics.return_value = {
                     "total_net_points": 315,
@@ -73,6 +80,10 @@ class TestDashboard(unittest.TestCase):
                 response = self.client.get(
                     "/manager?id=6940780"
                 )
+                print("RESPONSE STATUS:", response.status_code)
+                print("RESPONSE BODY:", response.get_data(as_text=True)[:500])
+        finally:
+            template_rendered.disconnect(record_template, app)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(captured), 1)

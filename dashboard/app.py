@@ -8,6 +8,7 @@ from database.sync_gameweeks import sync_gameweeks
 from database.league_repository import get_league
 from database.membership_repository import get_league_members
 from database.league_member_service import synchronize_league_members
+from database.gameweek_repository import get_latest_gameweek_update
 from flask import (
     Flask,
     render_template,
@@ -15,6 +16,7 @@ from flask import (
     redirect,
     url_for,
     session,
+    jsonify,
 )
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get(
@@ -190,6 +192,25 @@ def manager_dashboard():
         return "Invalid manager ID", 400
 
     try:
+        sync_gameweeks(manager_id, "2026/27")
+
+    except ValueError as error:
+        if get_manager(manager_id) is None:
+            return "Manager not found", 404
+        
+        app.logger.warning(
+            "Gameweek sync failed for manager %s: %s",
+            manager_id,
+            error
+        )
+    except (RuntimeError, KeyError, TypeError) as error:
+        app.logger.warning(
+            "Gameweek sync failed for manager %s: %s",
+            manager_id,
+            error
+        )
+
+    try:
         analytics = calculate_manager_analytics(
             manager_id,
             "2026/27"
@@ -289,6 +310,10 @@ def manager_dashboard():
         for points in gameweek_points:
             running_total += points
             cumulative_points.append(running_total)
+            last_updated = get_latest_gameweek_update(
+            manager_id,
+            "2026/27"
+        )
 
 
 
@@ -307,7 +332,8 @@ def manager_dashboard():
             managers=managers,
             selected_manager_id=manager_id,
             analytics=analytics,
-            performance_trends=analytics["performance_trends"]
+            performance_trends=analytics["performance_trends"],
+            last_updated=last_updated,
         )
 
 
@@ -319,12 +345,57 @@ def manager_dashboard():
 def manager_profile(manager_id):
     if manager_id <= 0:
         return "Invalid FPL Manager ID", 400
+
     manager = get_manager(manager_id)
+
     if manager is None:
         return "Manager not found", 404
-    return render_template("profile.html", manager=manager)
 
+    fpl_data = None
 
+    try:
+        fpl_data = FPLClient().get_manager(manager_id)
+    except RuntimeError:
+        app.logger.warning(
+            "Live FPL data unavailable for manager %s",
+            manager_id
+        )
+
+    return render_template(
+        "profile.html",
+        manager=manager,
+        fpl_data=fpl_data
+    )
+
+@app.route("/api/manager/<int:manager_id>/live-stats")
+def manager_live_stats(manager_id):
+    if manager_id <= 0:
+        return jsonify({"error": "Invalid FPL Manager ID"}), 400
+
+    manager = get_manager(manager_id)
+
+    if manager is None:
+        return jsonify({"error": "Manager not found"}), 404
+
+    try:
+        fpl_data = FPLClient().get_manager(manager_id)
+
+        return jsonify({
+            "overall_points": fpl_data.get("summary_overall_points"),
+            "overall_rank": fpl_data.get("summary_overall_rank"),
+            "event_points": fpl_data.get("summary_event_points"),
+            "current_event": fpl_data.get("current_event"),
+            "updated_at": __import__("datetime").datetime.now().astimezone().isoformat()
+        })
+
+    except RuntimeError:
+        app.logger.warning(
+            "Live FPL stats unavailable for manager %s",
+            manager_id
+        )
+        return jsonify({
+            "error": "Live FPL statistics are temporarily unavailable"
+        }), 503
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
