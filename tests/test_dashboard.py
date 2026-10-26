@@ -41,7 +41,7 @@ class TestDashboard(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
 
         self.assertIn(
-            b"Manager analytics not available",
+            b"Manager not found",
             response.data
         )
 
