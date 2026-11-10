@@ -58,10 +58,10 @@ class TestDashboard(unittest.TestCase):
                 "dashboard.app.calculate_manager_analytics"
             ) as mock_analytics, patch(
                 "dashboard.app.sync_gameweeks"
-            ), patch(
+           ), patch(
                 "dashboard.app.get_latest_gameweek_update",
                 return_value="2026-10-26 10:00:00"
-            ), patch(
+            ) as mock_latest_update, patch(
                 "dashboard.app.get_connection"
             ) as mock_get_connection:
 
@@ -125,6 +125,10 @@ class TestDashboard(unittest.TestCase):
             [66, 150, 176, 239, 279, 315]
         )
 
-        self.assertEqual(context["total_points"], 315)      
+        self.assertEqual(context["total_points"], 315)
+        mock_latest_update.assert_called_once_with(
+            6940780,
+            "2026/27"
+        )    
 if __name__ == "__main__":
     unittest.main()

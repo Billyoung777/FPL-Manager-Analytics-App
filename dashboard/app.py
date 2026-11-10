@@ -310,7 +310,8 @@ def manager_dashboard():
         for points in gameweek_points:
             running_total += points
             cumulative_points.append(running_total)
-            last_updated = get_latest_gameweek_update(
+
+        last_updated = get_latest_gameweek_update(
             manager_id,
             "2026/27"
         )
