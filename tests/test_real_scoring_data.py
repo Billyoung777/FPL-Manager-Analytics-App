@@ -1,197 +1,201 @@
-from api.fpl_client import FPLClient
-from tracker.squad_tracker import SquadTracker
-from tracker.player_performance import PlayerPerformanceTracker
+def main():
+    from api.fpl_client import FPLClient
+    from tracker.squad_tracker import SquadTracker
+    from tracker.player_performance import PlayerPerformanceTracker
 
 
-MANAGER_ID = 1053858
-START_GAMEWEEK = 1
-END_GAMEWEEK = 5
+    MANAGER_ID = 1053858
+    START_GAMEWEEK = 1
+    END_GAMEWEEK = 5
 
 
-client = FPLClient()
-squad_tracker = SquadTracker(client)
-performance_tracker = PlayerPerformanceTracker(client)
+    client = FPLClient()
+    squad_tracker = SquadTracker(client)
+    performance_tracker = PlayerPerformanceTracker(client)
 
 
-print("=" * 90)
-print("REAL FPL AUTO-SUB INSPECTION")
-print("=" * 90)
+    print("=" * 90)
+    print("REAL FPL AUTO-SUB INSPECTION")
+    print("=" * 90)
 
-for gameweek in range(
-    START_GAMEWEEK,
-    END_GAMEWEEK + 1
-):
-    squad = squad_tracker.get_gameweek_squad(
-        MANAGER_ID,
-        gameweek
-    )
-
-    performances = (
-        performance_tracker.get_squad_performance(
-            squad,
+    for gameweek in range(
+        START_GAMEWEEK,
+        END_GAMEWEEK + 1
+    ):
+        squad = squad_tracker.get_gameweek_squad(
+            MANAGER_ID,
             gameweek
         )
-    )
 
-    print(f"\nGAMEWEEK {gameweek}")
-    print("-" * 90)
-
-    print(
-        f"{'Player':<20}"
-        f"{'Position':<15}"
-        f"{'Slot':<8}"
-        f"{'Minutes':<10}"
-        f"{'Multiplier':<12}"
-        f"{'Status':<10}"
-    )
-
-    print("-" * 90)
-
-    for player in sorted(
-        performances,
-        key=lambda item: item["squad_position"]
-    ):
-        status = (
-            "START"
-            if player["is_starting"]
-            else "BENCH"
+        performances = (
+            performance_tracker.get_squad_performance(
+                squad,
+                gameweek
+            )
         )
 
-        marker = ""
-
-        if player["minutes"] == 0:
-            marker = " <-- DID NOT PLAY"
+        print(f"\nGAMEWEEK {gameweek}")
+        print("-" * 90)
 
         print(
-            f"{player['player_name']:<20}"
-            f"{player['position_name']:<15}"
-            f"{player['squad_position']:<8}"
-            f"{player['minutes']:<10}"
-            f"{player['multiplier']:<12}"
-            f"{status:<10}"
-            f"{marker}"
+            f"{'Player':<20}"
+            f"{'Position':<15}"
+            f"{'Slot':<8}"
+            f"{'Minutes':<10}"
+            f"{'Multiplier':<12}"
+            f"{'Status':<10}"
         )
 
-print("\n" + "=" * 90)
-print("INSPECTION COMPLETE")
-print("=" * 90)
+        print("-" * 90)
 
-raw_picks = client.get_manager_picks(
-    MANAGER_ID,
-    5
-)
+        for player in sorted(
+            performances,
+            key=lambda item: item["squad_position"]
+        ):
+            status = (
+                "START"
+                if player["is_starting"]
+                else "BENCH"
+            )
 
-players_data = client.get_players()
+            marker = ""
 
-player_lookup = {
-    player["id"]: player["web_name"]
-    for player in players_data["elements"]
-}
+            if player["minutes"] == 0:
+                marker = " <-- DID NOT PLAY"
 
-print("\nRAW GW5 PICKS")
-print("-" * 90)
+            print(
+                f"{player['player_name']:<20}"
+                f"{player['position_name']:<15}"
+                f"{player['squad_position']:<8}"
+                f"{player['minutes']:<10}"
+                f"{player['multiplier']:<12}"
+                f"{status:<10}"
+                f"{marker}"
+            )
 
-for pick in raw_picks["picks"]:
-    player_name = player_lookup.get(
-        pick["element"],
-        "Unknown"
+    print("\n" + "=" * 90)
+    print("INSPECTION COMPLETE")
+    print("=" * 90)
+
+    raw_picks = client.get_manager_picks(
+        MANAGER_ID,
+        5
     )
+
+    players_data = client.get_players()
+
+    player_lookup = {
+        player["id"]: player["web_name"]
+        for player in players_data["elements"]
+    }
+
+    print("\nRAW GW5 PICKS")
+    print("-" * 90)
+
+    for pick in raw_picks["picks"]:
+        player_name = player_lookup.get(
+            pick["element"],
+            "Unknown"
+        )
+
+        print(
+            f"{player_name:<20} | "
+            f"position={pick['position']} | "
+            f"multiplier={pick['multiplier']} | "
+            f"captain={pick['is_captain']} | "
+            f"vice={pick['is_vice_captain']}"
+        )
+
+    print("\nAUTOMATIC SUBSTITUTIONS")
+    print("-" * 90)
 
     print(
-        f"{player_name:<20} | "
-        f"position={pick['position']} | "
-        f"multiplier={pick['multiplier']} | "
-        f"captain={pick['is_captain']} | "
-        f"vice={pick['is_vice_captain']}"
+        raw_picks.get(
+            "automatic_subs",
+            "automatic_subs field not found"
+        )
     )
+    print("\nGW5 AUTO-SUB DETAILS")
+    print("-" * 90)
 
-print("\nAUTOMATIC SUBSTITUTIONS")
-print("-" * 90)
+    for auto_sub in raw_picks["automatic_subs"]:
+        player_in = player_lookup.get(
+            auto_sub["element_in"],
+            "Unknown"
+        )
 
-print(
-    raw_picks.get(
+        player_out = player_lookup.get(
+            auto_sub["element_out"],
+            "Unknown"
+        )
+
+        print(
+            f"OUT: {player_out} "
+            f"(ID {auto_sub['element_out']})"
+        )
+
+        print(
+            f"IN:  {player_in} "
+            f"(ID {auto_sub['element_in']})"
+        )
+
+    print("\nGW5 PICKS RESPONSE KEYS")
+    print("-" * 90)
+
+    for key in raw_picks.keys():
+        print(key)
+
+    print("\nGW5 PICKS METADATA")
+    print("-" * 90)
+
+    for key, value in raw_picks.items():
+        if key != "picks":
+            print(f"{key}: {value}")
+
+
+    print("\nGW5 AUTO-SUB VALIDATION SUMMARY")
+    print("-" * 90)
+
+    official_auto_subs = raw_picks.get(
         "automatic_subs",
-        "automatic_subs field not found"
-    )
-)
-print("\nGW5 AUTO-SUB DETAILS")
-print("-" * 90)
-
-for auto_sub in raw_picks["automatic_subs"]:
-    player_in = player_lookup.get(
-        auto_sub["element_in"],
-        "Unknown"
+        []
     )
 
-    player_out = player_lookup.get(
-        auto_sub["element_out"],
-        "Unknown"
+    for auto_sub in official_auto_subs:
+        player_out = player_lookup.get(
+            auto_sub["element_out"],
+            "Unknown"
+        )
+
+        player_in = player_lookup.get(
+            auto_sub["element_in"],
+            "Unknown"
+        )
+
+        print(
+            f"Official FPL: {player_out} -> {player_in}"
+        )
+
+    print(
+        "Original XI membership reconstructed: YES"
     )
 
     print(
-        f"OUT: {player_out} "
-        f"(ID {auto_sub['element_out']})"
+        "Original bench membership reconstructed: YES"
     )
 
     print(
-        f"IN:  {player_in} "
-        f"(ID {auto_sub['element_in']})"
-    )
-
-print("\nGW5 PICKS RESPONSE KEYS")
-print("-" * 90)
-
-for key in raw_picks.keys():
-    print(key)
-
-print("\nGW5 PICKS METADATA")
-print("-" * 90)
-
-for key, value in raw_picks.items():
-    if key != "picks":
-        print(f"{key}: {value}")
-
-
-print("\nGW5 AUTO-SUB VALIDATION SUMMARY")
-print("-" * 90)
-
-official_auto_subs = raw_picks.get(
-    "automatic_subs",
-    []
-)
-
-for auto_sub in official_auto_subs:
-    player_out = player_lookup.get(
-        auto_sub["element_out"],
-        "Unknown"
-    )
-
-    player_in = player_lookup.get(
-        auto_sub["element_in"],
-        "Unknown"
+        "Original bench priority available: NO"
     )
 
     print(
-        f"Official FPL: {player_out} -> {player_in}"
+        "Independent engine replay possible: NO"
     )
 
-print(
-    "Original XI membership reconstructed: YES"
-)
+    print(
+        "Reason: finalized historical picks do not preserve "
+        "the original bench order."
+    )
 
-print(
-    "Original bench membership reconstructed: YES"
-)
-
-print(
-    "Original bench priority available: NO"
-)
-
-print(
-    "Independent engine replay possible: NO"
-)
-
-print(
-    "Reason: finalized historical picks do not preserve "
-    "the original bench order."
-)
+if __name__ == "__main__":
+    main()
