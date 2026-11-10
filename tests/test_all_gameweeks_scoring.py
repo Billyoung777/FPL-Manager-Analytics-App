@@ -219,11 +219,12 @@ for gw in gameweeks:
         print(picks_data.get("entry_history"))
 
     official_points = gw["points"]
+    official_net_points = official_points - gw["event_transfers_cost"]
     calculated_points = result["total_points"]
 
     status = (
         "PASS"
-        if calculated_points == official_points
+        if calculated_points == official_net_points
         and result["formation_valid"]
         else "FAIL"
     )

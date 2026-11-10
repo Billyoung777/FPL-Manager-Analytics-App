@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from flask import template_rendered
 from dashboard.app import app
 
@@ -61,8 +61,33 @@ class TestDashboard(unittest.TestCase):
             ), patch(
                 "dashboard.app.get_latest_gameweek_update",
                 return_value="2026-10-26 10:00:00"
-            ):
+            ), patch(
+                "dashboard.app.get_connection"
+            ) as mock_get_connection:
 
+                mock_connection = MagicMock()
+
+                mock_connection.execute.side_effect = [
+                    MagicMock(fetchall=MagicMock(return_value=[
+                        (6940780, "Test Manager", "Test FC")
+                    ])),
+                    MagicMock(fetchone=MagicMock(return_value=(
+                        "Test Manager", "Test FC", 6, 315
+                    ))),
+                    MagicMock(fetchone=MagicMock(return_value=(
+                        52.5, 84, 26
+                    ))),
+                    MagicMock(fetchall=MagicMock(return_value=[
+                        (1, 66),
+                        (2, 84),
+                        (3, 26),
+                        (4, 63),
+                        (5, 40),
+                        (6, 36)
+                    ]))
+                ]
+                
+                mock_get_connection.return_value = mock_connection
                 mock_analytics.return_value = {
                     "total_net_points": 315,
                     "average_points": 52.5,
