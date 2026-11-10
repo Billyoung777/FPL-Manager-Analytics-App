@@ -1,26 +1,54 @@
 
 import sqlite3
 import unittest
+from unittest.mock import patch
 
-from database.db import get_connection
+from database.schema import create_tables
 
 
 class TestDatabaseConstraints(unittest.TestCase):
 
     def setUp(self):
-        self.connection = get_connection()
-        self.connection.execute("SAVEPOINT constraint_test")
+        # Each test receives a fresh, isolated database.
+        self.connection = sqlite3.connect(":memory:")
+        self.connection.execute("PRAGMA foreign_keys = ON")
 
-        self.connection.execute("""
-            INSERT INTO managers (
-                manager_id, manager_name, team_name
-            )
-            VALUES (?, ?, ?)
-        """, (-900001, "Test Manager", "Test FC"))
+        # create_tables() normally closes its connection.
+        # This wrapper keeps the test connection open.
+        class ConnectionWrapper:
+            def __init__(self, connection):
+                self.connection = connection
+
+            def execute(self, *args, **kwargs):
+                return self.connection.execute(*args, **kwargs)
+
+            def commit(self):
+                return self.connection.commit()
+
+            def close(self):
+                pass
+
+        wrapper = ConnectionWrapper(self.connection)
+
+        try:
+            with patch(
+                "database.schema.get_connection",
+                return_value=wrapper
+            ):
+                create_tables()
+
+            self.connection.execute("""
+                INSERT INTO managers (
+                    manager_id, manager_name, team_name
+                )
+                VALUES (?, ?, ?)
+            """, (-900001, "Test Manager", "Test FC"))
+
+        except Exception:
+            self.connection.close()
+            raise
 
     def tearDown(self):
-        self.connection.execute("ROLLBACK TO SAVEPOINT constraint_test")
-        self.connection.execute("RELEASE SAVEPOINT constraint_test")
         self.connection.close()
 
     def test_duplicate_manager_id(self):
