@@ -1,5 +1,5 @@
-
 import io
+import unittest
 from contextlib import redirect_stdout
 from unittest.mock import patch
 
@@ -22,29 +22,34 @@ def mock_generate_summary(league_id):
     }
 
 
-output = io.StringIO()
+class TestSeasonSummaryErrors(unittest.TestCase):
 
-with patch(
-    "tracker.season_summary.generate_season_summary",
-    side_effect=mock_generate_summary
-):
-    with redirect_stdout(output):
-        season_summary.main()
+    def test_api_timeout_does_not_stop_reporting(self):
+        output = io.StringIO()
+
+        with patch(
+            "tracker.season_summary.generate_season_summary",
+            side_effect=mock_generate_summary
+        ):
+            with redirect_stdout(output):
+                season_summary.main()
+
+        result = output.getvalue()
+
+        # Confirm the failed league is reported.
+        self.assertIn("League 1701837:", result)
+        self.assertIn("Connection timed out", result)
+
+        # Confirm the next league is processed.
+        self.assertIn("League: Kasi Football League", result)
+
+        # Confirm reporting continues after the timeout.
+        self.assertIn("CURRENT LEADERBOARD", result)
+        self.assertIn(
+            "MANAGER CONSISTENCY ANALYTICS",
+            result
+        )
 
 
-result = output.getvalue()
-
-assert "League 1701837:" in result
-assert "Connection timed out" in result
-assert "League: Kasi Football League" in result
-assert "CURRENT LEADERBOARD" in result
-assert "MANAGER CONSISTENCY ANALYTICS" in result
-
-print("=" * 60)
-print("SEASON SUMMARY ERROR HANDLING TEST")
-print("=" * 60)
-print("API timeout detected: PASS")
-print("Error message displayed: PASS")
-print("Second league processed: PASS")
-print("Report continues after failure: PASS")
-print("SEASON SUMMARY ERROR HANDLING: PASS")
+if __name__ == "__main__":
+    unittest.main()
