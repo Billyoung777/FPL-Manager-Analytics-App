@@ -9,11 +9,14 @@ SEASON = "2026/27"
 LEAGUE_IDS = [1701837, 1840079]
 
 
+
 def get_database_leaderboard(
     league_id,
     season,
-    mode="provisional"
+    mode="provisional",
+    verified_gameweeks=None
 ):
+
     """
     Build a mini-league leaderboard using
     locally stored SQLite gameweek data.
@@ -28,16 +31,20 @@ def get_database_leaderboard(
             "Mode must be 'verified' or 'provisional'."
         )
 
+
     verified_ids = []
 
     if mode == "verified":
-        statuses = get_gameweek_statuses()
+        if verified_gameweeks is None:
+            statuses = get_gameweek_statuses()
 
-        verified_ids = [
-            status["gameweek"]
-            for status in statuses
-            if status["verified"]
-        ]
+            verified_ids = [
+                status["gameweek"]
+                for status in statuses
+                if status["verified"]
+            ]
+        else:
+            verified_ids = list(verified_gameweeks)
 
     connection = get_connection()
 

@@ -1,5 +1,5 @@
 import requests
-
+from api.retry import retry_operation
 
 class FPLClient:
     BASE_URL = "https://fantasy.premierleague.com/api"
@@ -7,29 +7,44 @@ class FPLClient:
     def __init__(self, timeout=30):
         self.timeout = timeout
 # This method is used to make a GET request to the FPL API and return the JSON response. It handles exceptions for timeouts, HTTP errors, and other request-related issues.
+    
     def get(self, endpoint):
         url = f"{self.BASE_URL}/{endpoint}"
 
-        try:
-            response = requests.get(url, timeout=self.timeout)
+        def make_request():
+            response = requests.get(
+                url,
+                timeout=self.timeout
+            )
+
             response.raise_for_status()
 
             return response.json()
 
-        except requests.exceptions.Timeout:
+        try:
+            return retry_operation(
+                make_request,
+                max_attempts=3,
+                base_delay=1
+            )
+
+        except requests.exceptions.Timeout as error:
             raise RuntimeError(
                 f"FPL API request timed out: {endpoint}"
-            )
+            ) from error
 
         except requests.exceptions.HTTPError as error:
             raise RuntimeError(
-                f"FPL API returned an HTTP error for {endpoint}: {error}"
-            )
+                f"FPL API returned an HTTP error for "
+                f"{endpoint}: {error}"
+            ) from error
 
         except requests.exceptions.RequestException as error:
             raise RuntimeError(
-                f"FPL API request failed for {endpoint}: {error}"
-            )
+                f"FPL API request failed for "
+                f"{endpoint}: {error}"
+            ) from error
+
         
 # Below are the methods that can be added to the FPLClient class to retrieve manager and player data.
 # Manager data (Manager ID, Team name, Player name)

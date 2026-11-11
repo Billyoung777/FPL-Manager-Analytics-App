@@ -57,3 +57,32 @@ def get_league(league_id):
 
     finally:
         connection.close()
+
+def get_all_leagues():
+    """
+    Retrieve every registered mini-league
+    from the local SQLite database.
+    """
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute("""
+            SELECT
+                league_id,
+                league_name,
+                last_updated
+            FROM leagues
+            ORDER BY league_id ASC
+        """)
+
+        return [
+            {
+                "league_id": row[0],
+                "league_name": row[1],
+                "last_updated": row[2]
+            }
+            for row in cursor.fetchall()
+        ]
+
+    finally:
+        connection.close()

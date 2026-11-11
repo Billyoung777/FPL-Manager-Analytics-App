@@ -27,6 +27,32 @@ def get_gameweek_statuses():
 
     return statuses
 
+def get_finished_gameweek_ids(statuses=None):
+    """
+    Return IDs of all finished gameweeks.
+    """
+    if statuses is None:
+        statuses = get_gameweek_statuses()
+
+    return sorted(
+        status["gameweek"]
+        for status in statuses
+        if status["finished"]
+    )
+
+
+def get_verified_gameweek_ids(statuses=None):
+    """
+    Return IDs of all verified gameweeks.
+    """
+    if statuses is None:
+        statuses = get_gameweek_statuses()
+
+    return sorted(
+        status["gameweek"]
+        for status in statuses
+        if status["verified"]
+    )
 
 def main():
     print("=" * 60)

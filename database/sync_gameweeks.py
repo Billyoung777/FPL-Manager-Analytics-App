@@ -12,7 +12,7 @@ MANAGER_ID = 1053858
 SEASON = "2026/27"
 
 
-def sync_gameweeks(manager_id, season):
+def sync_gameweeks(manager_id, season, completed_gameweeks=None):
     """
     Fetch and store available FPL gameweek history.
     """
@@ -33,9 +33,19 @@ def sync_gameweeks(manager_id, season):
         f"entry/{manager_id}/history/"
     )
 
+
     gameweeks = history_data["current"]
 
+    if completed_gameweeks is not None:
+        completed_ids = set(completed_gameweeks)
+
+        gameweeks = [
+            gw for gw in gameweeks
+            if gw["event"] in completed_ids
+        ]
+
     for gw in gameweeks:
+
         save_gameweek_performance(
             manager_id=manager_id,
             season=season,

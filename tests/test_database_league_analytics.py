@@ -106,6 +106,35 @@ class TestDatabaseLeagueAnalytics(unittest.TestCase):
             )
 
 
+    def test_verified_gameweeks_reuse_without_api_call(self):
+        """
+        Supplying verified gameweeks must not trigger
+        another FPL API request.
+        """
+        from unittest.mock import patch
+
+        from database.league_analytics import (
+            get_database_leaderboard
+        )
+
+        with patch(
+            "database.league_analytics.get_gameweek_statuses"
+        ) as mock_statuses:
+
+            league_name, leaderboard = (
+                get_database_leaderboard(
+                    100,
+                    "2026/27",
+                    mode="verified",
+                    verified_gameweeks=[1, 2]
+                )
+            )
+
+            mock_statuses.assert_not_called()
+
+        self.assertIsInstance(league_name, str)
+        self.assertIsInstance(leaderboard, list)
+    
     @patch("database.league_analytics.get_gameweek_statuses")
     def test_verified_vs_provisional(self, mock_statuses):
         # Simulate GW1 verified and GW2 not verified.
@@ -139,6 +168,8 @@ class TestDatabaseLeagueAnalytics(unittest.TestCase):
         # Provisional mode includes GW1 and GW2.
         self.assertEqual(provisional_points[1], 106)
         self.assertEqual(provisional_points[2], 120)
+
+    
 
 if __name__ == "__main__":
     unittest.main()

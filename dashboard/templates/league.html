@@ -17,6 +17,33 @@
 </header>
 
 <section class="panel">
+    <div class="leaderboard-mode-selector">
+        <span class="mode-label">Leaderboard Mode:</span>
+
+        <a href="{{ url_for('league_dashboard',
+                league_id=league['league_id'],
+                manager_id=manager_id,
+                mode='provisional') }}"
+            class="mode-option {% if leaderboard_mode == 'provisional' %}active{% endif %}">
+            Provisional
+        </a>
+
+        <a href="{{ url_for('league_dashboard',
+                league_id=league['league_id'],
+                manager_id=manager_id,
+                mode='verified') }}" class="mode-option {% if leaderboard_mode == 'verified' %}active{% endif %}">
+            Verified
+        </a>
+    </div>
+
+    <p class="mode-description">
+        {% if leaderboard_mode == 'verified' %}
+        Showing only finalized FPL gameweeks.
+        {% else %}
+        Showing all locally synchronized gameweeks.
+        {% endif %}
+    </p>
+
     <div class="panel-heading">
         <div>
             <h2>Mini-League Leaderboard</h2>

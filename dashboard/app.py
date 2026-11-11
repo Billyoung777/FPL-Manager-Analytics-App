@@ -141,6 +141,14 @@ def league_dashboard(league_id):
 
     if manager_id is None or manager_id <= 0:
         return "Invalid FPL Manager ID", 400
+    
+    leaderboard_mode = request.args.get(
+        "mode",
+        default="provisional"
+    )
+
+    if leaderboard_mode not in ("provisional", "verified"):
+        return "Invalid leaderboard mode", 400
 
     league = get_league(league_id)
 
@@ -154,19 +162,8 @@ def league_dashboard(league_id):
         for member in members
     ):
         return "Manager is not a member of this league", 403
-
-    # Phase A: provisional rankings from stored gameweek data.
-    try:
-        _, leaderboard = get_database_leaderboard(
-            league_id,
-            "2026/27",
-            mode="provisional"
-        )
-    except ValueError:
-        return "League leaderboard unavailable", 404
-
-
-    # Retrieve verified gameweeks once for this request.
+    
+    # Fetch verification data once per request.
     try:
         statuses = get_gameweek_statuses()
 
@@ -176,10 +173,33 @@ def league_dashboard(league_id):
             if status["verified"]
         ]
 
-    except (RuntimeError, ValueError, KeyError, TypeError):
-        # Verification is unavailable; do not claim coverage
-        # is complete or incomplete.
+    except (RuntimeError, ValueError, KeyError, TypeError, OSError):
         verified_gameweeks = None
+
+    # Never display unverified rankings as verified.
+    if leaderboard_mode == "verified" and verified_gameweeks is None:
+        return (
+            "Verified leaderboard temporarily unavailable",
+            503
+        )
+
+    try:
+        if leaderboard_mode == "verified":
+            _, leaderboard = get_database_leaderboard(
+                league_id,
+                "2026/27",
+                mode="verified",
+                verified_gameweeks=verified_gameweeks
+            )
+        else:
+            _, leaderboard = get_database_leaderboard(
+                league_id,
+                "2026/27",
+                mode="provisional"
+            )
+
+    except ValueError:
+        return "League leaderboard unavailable", 404
 
     completeness = {}
 
@@ -200,9 +220,10 @@ def league_dashboard(league_id):
         members=members,
         manager_id=manager_id,
         leaderboard=leaderboard,
-        leaderboard_mode="provisional",
+        leaderboard_mode=leaderboard_mode,
         completeness=completeness
     )
+
 
 
 
