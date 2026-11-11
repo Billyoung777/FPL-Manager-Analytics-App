@@ -1,4 +1,6 @@
 import os
+from database.gameweek_status import get_gameweek_statuses
+from database.league_completeness import get_manager_completeness
 from database.db import get_connection
 from database.manager_analytics import calculate_manager_analytics
 from database.manager_league_service import register_manager_leagues
@@ -133,9 +135,6 @@ def refresh_league(league_id):
 
 
 
-
-
-
 @app.route("/league/<int:league_id>")
 def league_dashboard(league_id):
     manager_id = request.args.get("manager_id", type=int)
@@ -166,41 +165,45 @@ def league_dashboard(league_id):
     except ValueError:
         return "League leaderboard unavailable", 404
 
+
+    # Retrieve verified gameweeks once for this request.
+    try:
+        statuses = get_gameweek_statuses()
+
+        verified_gameweeks = [
+            status["gameweek"]
+            for status in statuses
+            if status["verified"]
+        ]
+
+    except (RuntimeError, ValueError, KeyError, TypeError):
+        # Verification is unavailable; do not claim coverage
+        # is complete or incomplete.
+        verified_gameweeks = None
+
+    completeness = {}
+
+    for entry in leaderboard:
+        entry_manager_id = entry["manager_id"]
+
+        completeness[entry_manager_id] = (
+            get_manager_completeness(
+                entry_manager_id,
+                "2026/27",
+                verified_gameweeks
+            )
+        )
+
     return render_template(
         "league.html",
         league=league,
         members=members,
         manager_id=manager_id,
         leaderboard=leaderboard,
-        leaderboard_mode="provisional"
+        leaderboard_mode="provisional",
+        completeness=completeness
     )
 
-
-    manager_id = request.args.get("manager_id", type=int)
-
-    if manager_id is None or manager_id <= 0:
-        return "Invalid FPL Manager ID", 400
-
-    league = get_league(league_id)
-
-    if league is None:
-        return "League not found", 404
-
-    members = get_league_members(league_id)
-
-    # Only show this league in the context of a member.
-    if not any(
-        member["manager_id"] == manager_id
-        for member in members
-    ):
-        return "Manager is not a member of this league", 403
-
-    return render_template(
-        "league.html",
-        league=league,
-        members=members,
-        manager_id=manager_id
-    )
 
 
 @app.route("/database-test")

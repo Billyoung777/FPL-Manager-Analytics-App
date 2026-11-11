@@ -45,6 +45,7 @@
                     <th>Team</th>
                     <th>Manager</th>
                     <th>GW Recorded</th>
+                    <th>Data Coverage</th>
                     <th>Net Points</th>
                     <th>Average / GW</th>
                 </tr>
@@ -61,12 +62,36 @@
                     </td>
                     <td>{{ entry.manager_name }}</td>
                     <td>{{ entry.gameweeks }}</td>
+                    <td>
+                        {% set coverage = completeness.get(entry.manager_id, {}) %}
+                        {% set status = coverage.get("status", "unknown") %}
+
+                        {% if status == "complete" %}
+                        <span class="coverage-complete">Complete</span>
+
+                        {% elif status == "incomplete" %}
+                        <span class="coverage-incomplete" title="Missing verified gameweek records">
+                            Missing {{ coverage.missing_gameweeks | length }} GW
+                        </span>
+
+                        {% elif status == "not_synchronized" %}
+                        <span class="coverage-missing">No history</span>
+
+                        {% else %}
+                        <span class="coverage-unknown">Unknown</span>
+                        {% endif %}
+                    </td>
                     <td><strong>{{ entry.total_points }}</strong></td>
                     <td>{{ entry.average_points }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+        <p class="coverage-note">
+            Data coverage compares stored gameweek records with verified
+            FPL gameweeks. Missing records may also reflect managers
+            who joined the season late.
+        </p>
     </div>
     {% else %}
     <p>No league members are available in the local database.</p>

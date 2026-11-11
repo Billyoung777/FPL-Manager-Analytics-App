@@ -10,15 +10,33 @@ class TestDashboardLeaderboard(unittest.TestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
+
+
+    @patch("dashboard.app.get_manager_completeness")
+    @patch("dashboard.app.get_gameweek_statuses")
     @patch("dashboard.app.get_league_members")
     @patch("dashboard.app.get_league")
-    @patch("dashboard.app.get_database_leaderboard", create=True)
+    @patch("dashboard.app.get_database_leaderboard")
     def test_league_dashboard_displays_rankings(
         self,
         mock_leaderboard,
         mock_league,
-        mock_members
+        mock_members,
+        mock_statuses,
+        mock_completeness
     ):
+        mock_statuses.return_value = [
+            {"gameweek": 1, "verified": True},
+            {"gameweek": 2, "verified": True}
+        ]
+
+        mock_completeness.return_value = {
+            "status": "complete",
+            "missing_gameweeks": [],
+            "stored_count": 2,
+            "expected_count": 2
+        }
+
         mock_league.return_value = {
             "league_id": 100,
             "league_name": "Test League"
