@@ -9,6 +9,7 @@ from database.league_repository import get_league
 from database.membership_repository import get_league_members
 from database.league_member_service import synchronize_league_members
 from database.gameweek_repository import get_latest_gameweek_update
+from database.league_analytics import get_database_leaderboard
 from flask import (
     Flask,
     render_template,
@@ -130,8 +131,51 @@ def refresh_league(league_id):
         )
     )
 
+
+
+
+
+
 @app.route("/league/<int:league_id>")
 def league_dashboard(league_id):
+    manager_id = request.args.get("manager_id", type=int)
+
+    if manager_id is None or manager_id <= 0:
+        return "Invalid FPL Manager ID", 400
+
+    league = get_league(league_id)
+
+    if league is None:
+        return "League not found", 404
+
+    members = get_league_members(league_id)
+
+    if not any(
+        member["manager_id"] == manager_id
+        for member in members
+    ):
+        return "Manager is not a member of this league", 403
+
+    # Phase A: provisional rankings from stored gameweek data.
+    try:
+        _, leaderboard = get_database_leaderboard(
+            league_id,
+            "2026/27",
+            mode="provisional"
+        )
+    except ValueError:
+        return "League leaderboard unavailable", 404
+
+    return render_template(
+        "league.html",
+        league=league,
+        members=members,
+        manager_id=manager_id,
+        leaderboard=leaderboard,
+        leaderboard_mode="provisional"
+    )
+
+
     manager_id = request.args.get("manager_id", type=int)
 
     if manager_id is None or manager_id <= 0:

@@ -3,37 +3,73 @@
 {% set active_manager_id = manager_id %}
 {% block title %}{{ league.league_name }}{% endblock %}
 {% block section_name %}Mini-League{% endblock %}
+
 {% block content %}
 <header class="page-header">
     <div>
         <p class="eyebrow">MINI-LEAGUE</p>
         <h1>{{ league.league_name }}</h1>
-        <p>{{ members|length }} synchronized managers · League ID {{ league.league_id }}</p>
-    </div><a class="btn btn-outline" href="{{ url_for('manager_hub',id=manager_id) }}">← My Mini-Leagues</a>
+        <p>{{ members|length }} synchronized members · League ID {{ league.league_id }}</p>
+    </div>
+    <a class="btn btn-outline" href="{{ url_for('manager_hub', id=manager_id) }}">
+        ← My Mini-Leagues
+    </a>
 </header>
-<div class="panel">
+
+<section class="panel">
     <div class="panel-heading">
         <div>
-            <h2>League Members</h2>
-            <p>Showing synchronized managers only. Large leagues may have more members beyond the first two pages.</p>
+            <h2>Mini-League Leaderboard</h2>
+            <p>Provisional rankings based on locally stored gameweek results.</p>
         </div>
-        <form action="{{ url_for('refresh_league',league_id=league.league_id) }}" method="post"><input type="hidden"
-                name="manager_id" value="{{ manager_id }}"><button class="btn btn-primary" type="submit">Refresh
-                Members</button></form>
+
+        <form action="{{ url_for('refresh_league', league_id=league.league_id) }}" method="post">
+            <input type="hidden" name="manager_id" value="{{ manager_id }}">
+            <button class="btn btn-primary" type="submit">
+                Refresh Members
+            </button>
+        </form>
     </div>
-    {% if members %}<div class="trends-table-wrapper">
+
+    <p>
+        Member refresh updates league membership, not gameweek scores.
+        Managers with incomplete history may have inaccurate rankings.
+    </p>
+
+    {% if leaderboard %}
+    <div class="trends-table-wrapper">
         <table class="trends-table">
             <thead>
                 <tr>
+                    <th>Rank</th>
                     <th>Team</th>
                     <th>Manager</th>
+                    <th>GW Recorded</th>
+                    <th>Net Points</th>
+                    <th>Average / GW</th>
                 </tr>
             </thead>
-            <tbody>{% for member in members %}<tr>
-                    <td>{{ member.team_name }}</td>
-                    <td>{{ member.manager_name }}</td>
-                </tr>{% endfor %}</tbody>
+            <tbody>
+                {% for entry in leaderboard %}
+                <tr>
+                    <td>{{ entry.rank }}</td>
+                    <td>
+                        <strong>{{ entry.team_name }}</strong>
+                        {% if entry.manager_id == manager_id %}
+                        <span class="pill">You</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ entry.manager_name }}</td>
+                    <td>{{ entry.gameweeks }}</td>
+                    <td><strong>{{ entry.total_points }}</strong></td>
+                    <td>{{ entry.average_points }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
         </table>
-    </div>{% else %}<p>No members synchronized yet.</p>{% endif %}
-</div>
+    </div>
+    {% else %}
+    <p>No league members are available in the local database.</p>
+    {% endif %}
+</section>
 {% endblock %}
