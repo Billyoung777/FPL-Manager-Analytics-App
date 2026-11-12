@@ -2,6 +2,7 @@ import time
 from database.league_repository import get_league
 from database.membership_repository import get_league_members
 from database.sync_gameweeks import sync_gameweeks
+from database.gameweek_status import get_finished_gameweek_ids
 
 
 SEASON = "2026/27"
@@ -69,15 +70,27 @@ def sync_selected_leagues(
         "managers": []
     }
 
+
     manager_ids = sorted(unique_managers)
+
+    # Retrieve completed gameweeks once for this sync run.
+    completed_gameweeks = (
+        get_finished_gameweek_ids()
+        if manager_ids
+        else []
+    )
 
     for index, manager_id in enumerate(manager_ids):
 
+
         try:
+
             history = sync_gameweeks(
                 manager_id,
-                season
+                season,
+                completed_gameweeks=completed_gameweeks
             )
+
 
             results["successful"] += 1
 

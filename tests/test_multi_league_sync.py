@@ -1,12 +1,15 @@
 
 import unittest
 from unittest.mock import patch
-
 from database.multi_league_sync import sync_selected_leagues
-
 
 class TestMultiLeagueSync(unittest.TestCase):
 
+
+    @patch(
+        "database.multi_league_sync.get_finished_gameweek_ids",
+        return_value=[1, 2, 3]
+    )
     @patch("database.multi_league_sync.sync_gameweeks")
     @patch("database.multi_league_sync.get_league_members")
     @patch("database.multi_league_sync.get_league")
@@ -14,8 +17,10 @@ class TestMultiLeagueSync(unittest.TestCase):
         self,
         mock_league,
         mock_members,
-        mock_sync
+        mock_sync,
+        mock_finished
     ):
+
         mock_league.side_effect = [
             {"league_name": "League One"},
             {"league_name": "League Two"}
@@ -31,7 +36,8 @@ class TestMultiLeagueSync(unittest.TestCase):
         ]
 
         result = sync_selected_leagues(
-            league_ids=[100, 200]
+            league_ids=[100, 200],
+            request_delay=0
         )
 
         self.assertEqual(result["total_leagues"], 2)
@@ -40,6 +46,11 @@ class TestMultiLeagueSync(unittest.TestCase):
         self.assertEqual(result["failed"], 0)
         self.assertEqual(mock_sync.call_count, 3)
 
+
+    @patch(
+        "database.multi_league_sync.get_finished_gameweek_ids",
+        return_value=[1, 2, 3]
+    )
     @patch("database.multi_league_sync.sync_gameweeks")
     @patch("database.multi_league_sync.get_league_members")
     @patch("database.multi_league_sync.get_league")
@@ -47,8 +58,10 @@ class TestMultiLeagueSync(unittest.TestCase):
         self,
         mock_league,
         mock_members,
-        mock_sync
+        mock_sync,
+        mock_finished
     ):
+
         mock_league.return_value = {
             "league_name": "League One"
         }
@@ -64,7 +77,8 @@ class TestMultiLeagueSync(unittest.TestCase):
         ]
 
         result = sync_selected_leagues(
-            league_ids=[100]
+            league_ids=[100],
+            request_delay=0
         )
 
         self.assertEqual(result["successful"], 1)
@@ -83,6 +97,11 @@ class TestMultiLeagueSync(unittest.TestCase):
                 league_ids=[999]
             )
 
+
+    @patch(
+        "database.multi_league_sync.get_finished_gameweek_ids",
+        return_value=[1, 2, 3]
+    )
     @patch("database.multi_league_sync.sync_gameweeks")
     @patch("database.multi_league_sync.get_league_members")
     @patch("database.multi_league_sync.get_league")
@@ -90,8 +109,10 @@ class TestMultiLeagueSync(unittest.TestCase):
         self,
         mock_league,
         mock_members,
-        mock_sync
+        mock_sync,
+        mock_finished
     ):
+
         from unittest.mock import Mock
 
         mock_league.return_value = {
@@ -122,6 +143,51 @@ class TestMultiLeagueSync(unittest.TestCase):
         # Three managers require two delays.
         self.assertEqual(sleep.call_count, 2)
         sleep.assert_any_call(0.5)
+
+    @patch("database.multi_league_sync.get_finished_gameweek_ids")
+    @patch("database.multi_league_sync.sync_gameweeks")
+    @patch("database.multi_league_sync.get_league_members")
+    @patch("database.multi_league_sync.get_league")
+    def test_dynamic_completed_gameweeks(
+        self,
+        mock_league,
+        mock_members,
+        mock_sync,
+        mock_finished
+    ):
+        mock_league.return_value = {
+            "league_name": "Test League"
+        }
+
+        mock_members.return_value = [
+            {"manager_id": 1},
+            {"manager_id": 2},
+            {"manager_id": 3}
+        ]
+
+        mock_finished.return_value = [1, 2, 3, 4]
+        mock_sync.return_value = [
+            {"gameweek": 1}
+        ]
+
+        result = sync_selected_leagues(
+            league_ids=[100],
+            request_delay=0
+        )
+
+        mock_finished.assert_called_once_with()
+
+        self.assertEqual(result["total_unique_managers"], 3)
+        self.assertEqual(result["successful"], 3)
+        self.assertEqual(result["failed"], 0)
+        self.assertEqual(mock_sync.call_count, 3)
+
+        for manager_id in [1, 2, 3]:
+            mock_sync.assert_any_call(
+                manager_id,
+                "2026/27",
+                completed_gameweeks=[1, 2, 3, 4]
+            )
 
 
 if __name__ == "__main__":
