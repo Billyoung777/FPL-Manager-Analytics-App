@@ -214,5 +214,85 @@ class TestVerifiedRecoveryIntegration(unittest.TestCase):
                 mock_verified.assert_not_called()
                 mock_recover.assert_not_called()
 
+    @patch(
+        "database.sync_recovery_executor.recover_missing_gameweeks"
+    )
+    @patch(
+        "database.sync_recovery_executor.get_verified_gameweek_ids"
+    )
+    def test_invalid_season_blocks_live_recovery(
+        self,
+        mock_verified,
+        mock_recover
+    ):
+        invalid_plan = {
+            "season": "invalid-season",
+            "recovery_queue": [
+                {
+                    "manager_id": 1053858,
+                    "missing_gameweeks": [8, 9]
+                }
+            ]
+        }
+
+        with self.assertRaises(ValueError) as context:
+            recover_verified_gameweeks(
+                invalid_plan,
+                allow_live="CONFIRM_LIVE_RECOVERY"
+            )
+
+        self.assertEqual(
+            str(context.exception),
+            "Invalid recovery season"
+        )
+
+        mock_verified.assert_not_called()
+        mock_recover.assert_not_called()
+
+    @patch(
+        "database.sync_recovery_executor.recover_missing_gameweeks"
+    )
+    @patch(
+        "database.sync_recovery_executor.get_verified_gameweek_ids"
+    )
+    def test_invalid_recovery_queue_blocks_live_recovery(
+        self,
+        mock_verified,
+        mock_recover
+    ):
+        invalid_queues = [
+            None,
+            "invalid",
+            {},
+            [None],
+            ["invalid"],
+            [{"manager_id": 1053858}],
+            [{"missing_gameweeks": [8, 9]}]
+        ]
+
+        for queue in invalid_queues:
+            with self.subTest(queue=queue):
+                mock_verified.reset_mock()
+                mock_recover.reset_mock()
+
+                invalid_plan = {
+                    "season": "2026/27",
+                    "recovery_queue": queue
+                }
+
+                with self.assertRaises(ValueError) as context:
+                    recover_verified_gameweeks(
+                        invalid_plan,
+                        allow_live="CONFIRM_LIVE_RECOVERY"
+                    )
+
+                self.assertEqual(
+                    str(context.exception),
+                    "Invalid recovery queue"
+                )
+
+                mock_verified.assert_not_called()
+                mock_recover.assert_not_called()
+
 if __name__ == "__main__":
     unittest.main()

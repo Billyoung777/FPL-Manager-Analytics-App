@@ -222,6 +222,33 @@ def recover_verified_gameweeks(recovery_plan, allow_live=None):
         raise PermissionError(
             "Live recovery requires explicit authorization"
         )
+
+    # Validate the recovery season before any API calls.
+    if (
+        not isinstance(recovery_plan, dict)
+        or recovery_plan.get("season") != "2026/27"
+    ):
+        raise ValueError(
+            "Invalid recovery season"
+        )
+
+    # Validate recovery queue before making API requests.
+    recovery_queue = recovery_plan.get("recovery_queue")
+
+    if (
+        not isinstance(recovery_queue, (list, tuple))
+        or not recovery_queue
+        or any(
+            not isinstance(manager, dict)
+            or "manager_id" not in manager
+            or "missing_gameweeks" not in manager
+            for manager in recovery_queue
+        )
+    ):
+        raise ValueError(
+            "Invalid recovery queue"
+        )
+
     verified_gameweeks = get_verified_gameweek_ids()
 
     if not verified_gameweeks:
