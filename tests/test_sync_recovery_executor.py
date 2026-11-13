@@ -622,5 +622,39 @@ class TestSyncRecoveryExecutor(unittest.TestCase):
                     [scenario["expected"]]
                 )
 
+
+    @patch("database.sync_recovery_executor.sync_gameweeks")
+    @patch("database.sync_recovery_executor.get_manager_gameweeks")
+    @patch("database.sync_recovery_executor.get_verified_gameweek_ids")
+    def test_dry_run_never_calls_external_services(
+        self,
+        mock_verified,
+        mock_history,
+        mock_sync
+    ):
+        recovery_plan = {
+            "season": "2026/27",
+            "recovery_queue": [
+                {
+                    "manager_id": 1053858,
+                    "status": "incomplete",
+                    "missing_gameweeks": [8, 9]
+                }
+            ]
+        }
+
+        result = execute_recovery_plan(
+            recovery_plan,
+            dry_run=True
+        )
+
+        self.assertTrue(result["dry_run"])
+        self.assertEqual(result["total_queued"], 1)
+
+        mock_verified.assert_not_called()
+        mock_history.assert_not_called()
+        mock_sync.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()
