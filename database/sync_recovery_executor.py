@@ -249,6 +249,51 @@ def recover_verified_gameweeks(recovery_plan, allow_live=None):
             "Invalid recovery queue"
         )
 
+    # Reject invalid manager IDs before external operations.
+    if any(
+        type(manager["manager_id"]) is not int
+        or manager["manager_id"] <= 0
+        for manager in recovery_queue
+    ):
+        raise ValueError(
+            "Invalid recovery manager ID"
+        )
+
+    # Reject duplicate manager IDs before external operations.
+    manager_ids = [
+        manager["manager_id"]
+        for manager in recovery_queue
+    ]
+
+    if len(manager_ids) != len(set(manager_ids)):
+        raise ValueError(
+            "Duplicate manager ID in recovery queue"
+        )
+
+
+    # Validate requested gameweeks before external operations.
+    for manager in recovery_queue:
+        gameweeks = manager["missing_gameweeks"]
+
+        if (
+            not isinstance(gameweeks, (list, tuple))
+            or not gameweeks
+        ):
+            raise ValueError(
+                "Invalid recovery gameweeks"
+            )
+
+        if (
+            any(
+                type(gw) is not int or not 1 <= gw <= 38
+                for gw in gameweeks
+            )
+            or len(gameweeks) != len(set(gameweeks))
+        ):
+            raise ValueError(
+                "Invalid recovery gameweeks"
+            )
+
     verified_gameweeks = get_verified_gameweek_ids()
 
     if not verified_gameweeks:
