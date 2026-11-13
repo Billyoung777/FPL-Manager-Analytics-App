@@ -209,7 +209,7 @@ def recover_missing_gameweeks(
 
 
 
-def recover_verified_gameweeks(recovery_plan):
+def recover_verified_gameweeks(recovery_plan, allow_live=None):
     """
     Recover missing gameweeks using the current
     FPL verification snapshot.
@@ -217,12 +217,28 @@ def recover_verified_gameweeks(recovery_plan):
     Verification is retrieved once per batch.
     Reject empty verification snapshots.
     """
-
+    # Live synchronization is disabled by default.
+    if allow_live != "CONFIRM_LIVE_RECOVERY":
+        raise PermissionError(
+            "Live recovery requires explicit authorization"
+        )
     verified_gameweeks = get_verified_gameweek_ids()
 
     if not verified_gameweeks:
         raise ValueError(
             "No verified gameweeks available for recovery"
+        )
+
+    if (
+        not isinstance(verified_gameweeks, (list, tuple))
+        or any(
+            type(gw) is not int or not 1 <= gw <= 38
+            for gw in verified_gameweeks
+        )
+        or len(set(verified_gameweeks)) != len(verified_gameweeks)
+    ):
+        raise ValueError(
+            "Invalid verified gameweek snapshot"
         )
 
     return recover_missing_gameweeks(

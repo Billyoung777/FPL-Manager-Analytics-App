@@ -44,7 +44,8 @@ class TestVerifiedRecoveryIntegration(unittest.TestCase):
         }
 
         result = recover_verified_gameweeks(
-            self.recovery_plan
+            self.recovery_plan,
+            allow_live="CONFIRM_LIVE_RECOVERY"
         )
 
         mock_verified.assert_called_once_with()
@@ -76,7 +77,8 @@ class TestVerifiedRecoveryIntegration(unittest.TestCase):
 
         with self.assertRaises(RuntimeError):
             recover_verified_gameweeks(
-                self.recovery_plan
+                self.recovery_plan,
+                allow_live="CONFIRM_LIVE_RECOVERY"
             )
 
         mock_verified.assert_called_once_with()
@@ -96,11 +98,11 @@ class TestVerifiedRecoveryIntegration(unittest.TestCase):
         mock_verified.return_value = [1, 2, 8, 9]
 
         recover_verified_gameweeks(
-            self.recovery_plan
+            self.recovery_plan,
+            allow_live="CONFIRM_LIVE_RECOVERY"
         )
 
         mock_verified.assert_called_once_with()
-
         mock_recover.assert_called_once_with(
             self.recovery_plan,
             verified_gameweeks=[1, 2, 8, 9]
@@ -122,7 +124,8 @@ class TestVerifiedRecoveryIntegration(unittest.TestCase):
 
         with self.assertRaises(ValueError) as context:
             recover_verified_gameweeks(
-                self.recovery_plan
+                self.recovery_plan,
+                allow_live="CONFIRM_LIVE_RECOVERY"
             )
 
         self.assertEqual(
@@ -132,6 +135,84 @@ class TestVerifiedRecoveryIntegration(unittest.TestCase):
 
         mock_verified.assert_called_once_with()
         mock_recover.assert_not_called()
+
+    @patch(
+        "database.sync_recovery_executor.recover_missing_gameweeks"
+    )
+    @patch(
+        "database.sync_recovery_executor.get_verified_gameweek_ids"
+    )
+    def test_malformed_verification_snapshot_blocks_recovery(
+        self,
+        mock_verified,
+        mock_recover
+    ):
+        invalid_snapshots = [
+            ["8", 9],
+            [None, 8],
+            [True, 8],
+            [0, 8],
+            [39],
+            "8,9",
+            {"gameweek": 8},
+            [8, 8]
+        ]
+
+        for snapshot in invalid_snapshots:
+            with self.subTest(snapshot=snapshot):
+                mock_verified.reset_mock()
+                mock_recover.reset_mock()
+                mock_verified.return_value = snapshot
+
+                with self.assertRaises(ValueError) as context:
+                    recover_verified_gameweeks(
+                        self.recovery_plan,
+                        allow_live="CONFIRM_LIVE_RECOVERY"
+                    )
+
+                self.assertEqual(
+                    str(context.exception),
+                    "Invalid verified gameweek snapshot"
+                )
+
+                mock_verified.assert_called_once_with()
+                mock_recover.assert_not_called()
+
+    @patch(
+        "database.sync_recovery_executor.recover_missing_gameweeks"
+    )
+    @patch(
+        "database.sync_recovery_executor.get_verified_gameweek_ids"
+    )
+    def test_live_recovery_requires_explicit_authorization(
+        self,
+        mock_verified,
+        mock_recover
+    ):
+        for authorization in (None, False, True, 1, "yes"):
+            with self.subTest(authorization=authorization):
+                mock_verified.reset_mock()
+                mock_recover.reset_mock()
+
+                kwargs = (
+                    {}
+                    if authorization is None
+                    else {"allow_live": authorization}
+                )
+
+                with self.assertRaises(PermissionError) as context:
+                    recover_verified_gameweeks(
+                        self.recovery_plan,
+                        **kwargs
+                    )
+
+                self.assertEqual(
+                    str(context.exception),
+                    "Live recovery requires explicit authorization"
+                )
+
+                mock_verified.assert_not_called()
+                mock_recover.assert_not_called()
 
 if __name__ == "__main__":
     unittest.main()
