@@ -65,44 +65,6 @@ def save_gameweek_performance(
         if owns_connection:
             connection.close()
 
-    """
-    Insert or update a manager's gameweek performance.
-    """
-
-    connection = get_connection()
-
-    try:
-        connection.execute("""
-            INSERT INTO gameweek_performances (
-                manager_id,
-                season,
-                gameweek,
-                points,
-                transfer_cost,
-                total_points
-            )
-            VALUES (?, ?, ?, ?, ?, ?)
-
-            ON CONFLICT(manager_id, season, gameweek)
-            DO UPDATE SET
-                points = excluded.points,
-                transfer_cost = excluded.transfer_cost,
-                total_points = excluded.total_points,
-                last_updated = CURRENT_TIMESTAMP
-        """, (
-            manager_id,
-            season,
-            gameweek,
-            points,
-            transfer_cost,
-            total_points
-        ))
-
-        connection.commit()
-
-    finally:
-        connection.close()
-
 
 def get_manager_gameweeks(manager_id, season):
     """

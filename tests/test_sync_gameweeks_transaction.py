@@ -132,6 +132,85 @@ class TestSyncGameweeksTransaction(unittest.TestCase):
         self.assertEqual(history[0]["points"], 50)
         self.assertEqual(history[0]["total_points"], 400)
 
+    @patch("database.sync_gameweeks.FPLClient")
+    def test_failed_sync_can_be_retried_without_duplicates(
+        self,
+        mock_client_class
+    ):
+        mock_client = mock_client_class.return_value
+
+        # First attempt: GW8 valid, GW9 invalid.
+        mock_client.get.return_value = {
+            "current": [
+                {
+                    "event": 8,
+                    "points": 50,
+                    "event_transfers_cost": 0,
+                    "total_points": 400
+                },
+                {
+                    "event": 9,
+                    "points": None,
+                    "event_transfers_cost": 0,
+                    "total_points": 450
+                }
+            ]
+        }
+
+        with self.assertRaises(Exception):
+            sync_gameweeks(
+                manager_id=1053858,
+                season="2026/27",
+                completed_gameweeks=[8, 9]
+            )
+
+        self.assertEqual(
+            get_manager_gameweeks(1053858, "2026/27"),
+            []
+        )
+
+        # Second attempt: both gameweeks valid.
+        mock_client.get.return_value["current"][1]["points"] = 50
+
+        sync_gameweeks(
+            manager_id=1053858,
+            season="2026/27",
+            completed_gameweeks=[8, 9]
+        )
+
+        history = get_manager_gameweeks(
+            1053858,
+            "2026/27"
+        )
+
+        self.assertEqual(
+            [gw["gameweek"] for gw in history],
+            [8, 9]
+        )
+
+        # Third attempt: repeat synchronization with
+        # an updated GW8 score.
+        mock_client.get.return_value["current"][0]["points"] = 65
+
+        sync_gameweeks(
+            manager_id=1053858,
+            season="2026/27",
+            completed_gameweeks=[8, 9]
+        )
+
+        history = get_manager_gameweeks(
+            1053858,
+            "2026/27"
+        )
+
+        self.assertEqual(len(history), 2)
+        self.assertEqual(
+            [gw["gameweek"] for gw in history],
+            [8, 9]
+        )
+        self.assertEqual(history[0]["points"], 65)
+        self.assertEqual(history[1]["points"], 50)
+
 
 if __name__ == "__main__":
     unittest.main()
