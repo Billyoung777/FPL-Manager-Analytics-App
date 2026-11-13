@@ -1,6 +1,6 @@
 
 from api.fpl_client import FPLClient
-
+from database.db import get_connection
 from database.manager_repository import get_manager
 from database.gameweek_repository import (
     save_gameweek_performance,
@@ -44,18 +44,35 @@ def sync_gameweeks(manager_id, season, completed_gameweeks=None):
             if gw["event"] in completed_ids
         ]
 
-    for gw in gameweeks:
 
-        save_gameweek_performance(
-            manager_id=manager_id,
-            season=season,
-            gameweek=gw["event"],
-            points=gw["points"],
-            transfer_cost=gw["event_transfers_cost"],
-            total_points=gw["total_points"]
-        )
+    # Save the entire gameweek batch atomically.
+    connection = get_connection()
+
+    try:
+        for gw in gameweeks:
+            save_gameweek_performance(
+                manager_id=manager_id,
+                season=season,
+                gameweek=gw["event"],
+                points=gw["points"],
+                transfer_cost=gw["event_transfers_cost"],
+                total_points=gw["total_points"],
+                connection=connection
+            )
+
+        # Commit only after every gameweek succeeds.
+        connection.commit()
+
+    except Exception:
+        # Undo all writes if any gameweek fails.
+        connection.rollback()
+        raise
+
+    finally:
+        connection.close()
 
     return get_manager_gameweeks(manager_id, season)
+
 
 
 def main():
