@@ -77,6 +77,61 @@ class TestSyncGameweeksTransaction(unittest.TestCase):
             "A failed synchronization must roll back all writes"
         )
 
+    @patch("database.sync_gameweeks.FPLClient")
+    def test_failed_sync_preserves_existing_gameweek(
+        self,
+        mock_client_class
+    ):
+        from database.gameweek_repository import (
+            save_gameweek_performance
+        )
+
+        # Store an existing GW8 record.
+        save_gameweek_performance(
+            manager_id=1053858,
+            season="2026/27",
+            gameweek=8,
+            points=50,
+            transfer_cost=0,
+            total_points=400
+        )
+
+        mock_client = mock_client_class.return_value
+
+        mock_client.get.return_value = {
+            "current": [
+                {
+                    "event": 8,
+                    "points": 65,
+                    "event_transfers_cost": 0,
+                    "total_points": 415
+                },
+                {
+                    "event": 9,
+                    "points": None,
+                    "event_transfers_cost": 0,
+                    "total_points": 450
+                }
+            ]
+        }
+
+        with self.assertRaises(Exception):
+            sync_gameweeks(
+                manager_id=1053858,
+                season="2026/27",
+                completed_gameweeks=[8, 9]
+            )
+
+        history = get_manager_gameweeks(
+            1053858,
+            "2026/27"
+        )
+
+        self.assertEqual(len(history), 1)
+        self.assertEqual(history[0]["gameweek"], 8)
+        self.assertEqual(history[0]["points"], 50)
+        self.assertEqual(history[0]["total_points"], 400)
+
 
 if __name__ == "__main__":
     unittest.main()
