@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% set active_page = "system_health" %}
+
+{% block title %}System Health{% endblock %}
+{% block section_name %}System Health{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">SYSTEM MONITORING</p>
+        <h1>Synchronization Monitor</h1>
+        <p>Latest stored FPL database synchronization status.</p>
+    </div>
+</header>
+
+<section class="stats-grid" aria-label="Synchronization summary">
+    <article class="stat-card">
+        <h3>Sync Status</h3>
+        <div class="value" id="sync-status">Loading...</div>
+    </article>
+
+    <article class="stat-card">
+        <h3>Successful Managers</h3>
+        <div class="value" id="sync-successful">--</div>
+    </article>
+
+    <article class="stat-card">
+        <h3>Failed Managers</h3>
+        <div class="value" id="sync-failed">--</div>
+    </article>
+</section>
+
+<section class="panel" aria-labelledby="sync-details-title">
+    <h2 id="sync-details-title">Latest Synchronization</h2>
+
+    <p>Season: <strong id="sync-season">--</strong></p>
+    <p>Last Sync: <strong id="sync-finished">--</strong></p>
+    <p>Failure Stage: <strong id="sync-stage">--</strong></p>
+    <p>Failed Manager IDs:
+        <strong id="sync-manager-ids">--</strong>
+    </p>
+    <p id="sync-error" role="status"></p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/sync_health.js') }}" defer></script>
+{% endblock %}

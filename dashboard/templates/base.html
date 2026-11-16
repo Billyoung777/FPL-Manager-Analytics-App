@@ -40,6 +40,11 @@
           <small>Planned</small></span>
         <span class="nav-link disabled" aria-disabled="true"><span class="nav-icon">♛</span>League Leaderboard
           <small>Planned</small></span>
+        <p class="nav-heading">SYSTEM</p>
+        <a class="nav-link {% if active_page == 'system_health' %}active{% endif %}"
+          href="{{ url_for('system_health_page') }}">
+          <span class="nav-icon">&#9881;</span>System Health
+        </a>
         <p class="nav-heading">TOOLS</p>
         <span class="nav-link disabled" aria-disabled="true"><span class="nav-icon">⇆</span>Transfers &amp; Chips
           <small>Planned</small></span>

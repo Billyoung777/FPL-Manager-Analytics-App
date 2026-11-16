@@ -12,6 +12,7 @@ from database.membership_repository import get_league_members
 from database.league_member_service import synchronize_league_members
 from database.gameweek_repository import get_latest_gameweek_update
 from database.league_analytics import get_database_leaderboard
+from database.sync_history_repository import get_latest_sync
 from flask import (
     Flask,
     render_template,
@@ -465,6 +466,33 @@ def manager_live_stats(manager_id):
         return jsonify({
             "error": "Live FPL statistics are temporarily unavailable"
         }), 503
+@app.route("/api/sync/health", methods=["GET"])
+def sync_health_api():
+    """Return the latest stored synchronization status."""
+
+    try:
+        latest_sync = get_latest_sync()
+
+    except Exception:
+        app.logger.exception(
+            "Unable to retrieve synchronization health"
+        )
+        return jsonify({
+            "error": "Synchronization health is temporarily unavailable"
+        }), 503
+
+    if latest_sync is None:
+        return jsonify({
+            "status": "not_synchronized",
+            "message": "No synchronization history found."
+        }), 200
+
+    return jsonify(latest_sync), 200
+
+@app.route("/system-health")
+def system_health_page():
+    """Display the synchronization monitoring page."""
+    return render_template("system_health.html")
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
