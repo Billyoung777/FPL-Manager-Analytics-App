@@ -9,11 +9,17 @@ def save_sync_history(
     successful_managers,
     failed_managers,
     started_at,
-    finished_at
+    finished_at,
+    stage=None,
+    error_message=None,
+    failed_manager_ids=None
 ):
     """
-    Save a synchronization run to the database.
+    Save synchronization history with optional failure details.
+
+    Requires the sync_history schema migration.
     """
+    import json
 
     connection = get_connection()
 
@@ -26,9 +32,12 @@ def save_sync_history(
                 successful_managers,
                 failed_managers,
                 started_at,
-                finished_at
+                finished_at,
+                stage,
+                error_message,
+                failed_manager_ids
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 season,
@@ -36,12 +45,18 @@ def save_sync_history(
                 successful_managers,
                 failed_managers,
                 started_at,
-                finished_at
+                finished_at,
+                stage,
+                error_message,
+                (
+                    json.dumps(failed_manager_ids)
+                    if failed_manager_ids is not None
+                    else None
+                )
             )
         )
 
         connection.commit()
-
         return cursor.lastrowid
 
     finally:
@@ -49,8 +64,10 @@ def save_sync_history(
 
 def get_latest_sync():
     """
-    Retrieve the most recent synchronization record.
+    Retrieve the latest synchronization record,
+    including optional failure details.
     """
+    import json
 
     connection = get_connection()
 
@@ -65,7 +82,10 @@ def get_latest_sync():
                 successful_managers,
                 failed_managers,
                 started_at,
-                finished_at
+                finished_at,
+                stage,
+                error_message,
+                failed_manager_ids
             FROM sync_history
             ORDER BY sync_id DESC
             LIMIT 1
@@ -76,7 +96,14 @@ def get_latest_sync():
         if record is None:
             return None
 
-        return dict(record)
+        result = dict(record)
+
+        if result["failed_manager_ids"] is not None:
+            result["failed_manager_ids"] = json.loads(
+                result["failed_manager_ids"]
+            )
+
+        return result
 
     finally:
         connection.close()

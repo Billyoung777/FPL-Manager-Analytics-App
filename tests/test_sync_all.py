@@ -186,6 +186,7 @@ class TestSyncAll(unittest.TestCase):
             {
                 "status": "partial",
                 "season": "2026/27",
+                "stage": "gameweeks",
                 "successful_managers": 10,
                 "failed_managers": [953118, 1053858]
             }

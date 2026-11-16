@@ -81,12 +81,10 @@ def sync_all():
     print("\n[3/3] SYNCHRONIZING GAMEWEEK PERFORMANCES")
 
 
-    try:
-        successful_managers, failed_managers = (
-            sync_all_gameweeks(SEASON)
-        )
 
-        
+    try:
+        successful_managers, failed_managers = sync_all_gameweeks(SEASON)
+
         if failed_managers:
             print("\nWARNING: PARTIAL SYNCHRONIZATION")
             print(f"Successful managers: {successful_managers}")
@@ -96,14 +94,11 @@ def sync_all():
             return record_sync_result({
                 "status": "partial",
                 "season": SEASON,
+                "stage": "gameweeks",
                 "successful_managers": successful_managers,
                 "failed_managers": failed_managers
             }, started_at)
 
-
-        print("\nAll tracked managers synchronized successfully.")
-
-    
     except Exception as error:
         print(f"ERROR: Gameweek synchronization failed: {error}")
 
@@ -122,6 +117,7 @@ def sync_all():
     print(f"Leagues processed: {successful_leagues}")
     print(f"Season: {SEASON}")
     print(f"Finished: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("\nAll tracked managers synchronized successfully.")
     
 
     return record_sync_result({
@@ -143,23 +139,33 @@ def get_sync_timestamp():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
+
 def record_sync_result(result, started_at):
     """
-    Save a synchronization result and return it unchanged.
+    Record synchronization status and failure details.
     """
     finished_at = get_sync_timestamp()
+
+    failed_manager_ids = result.get("failed_managers", [])
+
+    if not isinstance(failed_manager_ids, list):
+        failed_manager_ids = []
 
     save_sync_history(
         season=result["season"],
         status=result["status"],
-        successful_managers=result.get("successful_managers", 0),
-        failed_managers=len(result.get("failed_managers", [])),
+        successful_managers=result.get(
+            "successful_managers", 0
+        ),
+        failed_managers=len(failed_manager_ids),
         started_at=started_at,
-        finished_at=finished_at
+        finished_at=finished_at,
+        stage=result.get("stage"),
+        error_message=result.get("error"),
+        failed_manager_ids=failed_manager_ids
     )
 
     return result
-
 
 def get_exit_code(result):
     """Convert synchronization status into a process exit code."""

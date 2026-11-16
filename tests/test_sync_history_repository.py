@@ -26,7 +26,10 @@ class TestSyncHistoryRepository(unittest.TestCase):
                     successful_managers INTEGER DEFAULT 0,
                     failed_managers INTEGER DEFAULT 0,
                     started_at TEXT NOT NULL,
-                    finished_at TEXT NOT NULL
+                    finished_at TEXT NOT NULL,
+                    stage TEXT,
+                    error_message TEXT,
+                    failed_manager_ids TEXT
                 )
             """)
 
@@ -119,14 +122,21 @@ class TestSyncHistoryRepository(unittest.TestCase):
                     successful_managers INTEGER DEFAULT 0,
                     failed_managers INTEGER DEFAULT 0,
                     started_at TEXT NOT NULL,
-                    finished_at TEXT NOT NULL
+                    finished_at TEXT NOT NULL,
+                    stage TEXT,
+                    error_message TEXT,
+                    failed_manager_ids TEXT
                 )
             """)
 
             connection.executemany("""
                 INSERT INTO sync_history (
-                    season, status, successful_managers,
-                    failed_managers, started_at, finished_at
+                    season,
+                    status,
+                    successful_managers,
+                    failed_managers,
+                    started_at,
+                    finished_at
                 )
                 VALUES (?, ?, ?, ?, ?, ?)
             """, [
@@ -141,6 +151,7 @@ class TestSyncHistoryRepository(unittest.TestCase):
                     "2026-10-14 12:01:00"
                 )
             ])
+
 
             connection.commit()
             connection.close()
@@ -174,7 +185,10 @@ class TestSyncHistoryRepository(unittest.TestCase):
                     successful_managers INTEGER DEFAULT 0,
                     failed_managers INTEGER DEFAULT 0,
                     started_at TEXT NOT NULL,
-                    finished_at TEXT NOT NULL
+                    finished_at TEXT NOT NULL,
+                    stage TEXT,
+                    error_message TEXT,
+                    failed_manager_ids TEXT
                 )
             """)
 
@@ -191,6 +205,66 @@ class TestSyncHistoryRepository(unittest.TestCase):
                 latest = get_latest_sync()
 
             self.assertIsNone(latest)
+
+    def test_save_and_retrieve_failure_details(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            db_path = Path(temp_dir) / "test_fpl.db"
+
+            connection = sqlite3.connect(db_path)
+
+            try:
+                connection.execute("""
+                    CREATE TABLE sync_history (
+                        sync_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        season TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        successful_managers INTEGER DEFAULT 0,
+                        failed_managers INTEGER DEFAULT 0,
+                        started_at TEXT NOT NULL,
+                        finished_at TEXT NOT NULL,
+                        stage TEXT,
+                        error_message TEXT,
+                        failed_manager_ids TEXT
+                    )
+                """)
+                connection.commit()
+            finally:
+                connection.close()
+
+            def test_connection():
+                return sqlite3.connect(db_path)
+
+            with patch(
+                "database.sync_history_repository.get_connection",
+                side_effect=test_connection
+            ):
+                sync_id = save_sync_history(
+                    season="2026/27",
+                    status="partial",
+                    successful_managers=10,
+                    failed_managers=2,
+                    started_at="2026-11-16 10:00:00",
+                    finished_at="2026-11-16 10:01:00",
+                    stage="gameweeks",
+                    error_message="Two managers failed synchronization",
+                    failed_manager_ids=[953118, 1053858]
+                )
+
+                latest = get_latest_sync()
+
+            self.assertEqual(latest["sync_id"], sync_id)
+            self.assertEqual(latest["status"], "partial")
+            self.assertEqual(latest["stage"], "gameweeks")
+            self.assertEqual(
+                latest["error_message"],
+                "Two managers failed synchronization"
+            )
+            self.assertEqual(
+                latest["failed_manager_ids"],
+                [953118, 1053858]
+            )
+            self.assertEqual(latest["successful_managers"], 10)
+            self.assertEqual(latest["failed_managers"], 2)
 
 
 if __name__ == "__main__":

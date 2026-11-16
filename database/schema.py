@@ -70,6 +70,27 @@ def create_tables():
             )
         """)
 
+        # Upgrade existing sync_history tables without deleting records.
+        existing_columns = {
+            row[1]
+            for row in connection.execute(
+                "PRAGMA table_info(sync_history)"
+            ).fetchall()
+        }
+
+        new_columns = {
+            "stage": "TEXT",
+            "error_message": "TEXT",
+            "failed_manager_ids": "TEXT"
+        }
+
+        for column_name, column_type in new_columns.items():
+            if column_name not in existing_columns:
+                connection.execute(
+                    f"ALTER TABLE sync_history "
+                    f"ADD COLUMN {column_name} {column_type}"
+                )
+
         connection.commit()
 
         print("All database tables initialized successfully.")
