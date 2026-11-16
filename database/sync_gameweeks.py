@@ -58,6 +58,15 @@ def sync_gameweeks(manager_id, season, completed_gameweeks=None):
                     f"GW{gw['event']}: points must be an integer"
                 )
 
+            # Transfer cost must be a non-negative integer.
+            if (
+                type(gw.get("event_transfers_cost")) is not int
+                or gw["event_transfers_cost"] < 0
+            ):
+                raise ValueError(
+                    f"GW{gw['event']}: transfer_cost must be "
+                    "a non-negative integer"
+                )
 
             save_gameweek_performance(
                 manager_id=manager_id,
