@@ -26,7 +26,19 @@ def sync_all():
 
     # STEP 1: Initialize database tables.
     print("\n[1/3] INITIALIZING DATABASE")
-    create_tables()
+
+    try:
+        create_tables()
+
+    except Exception as error:
+        print(f"ERROR: Database initialization failed: {error}")
+
+        return {
+            "status": "failed",
+            "season": SEASON,
+            "stage": "database",
+            "error": str(error)
+        }
 
     # STEP 2: Synchronize leagues and memberships.
     print("\n[2/3] SYNCHRONIZING LEAGUES AND MEMBERS")

@@ -232,6 +232,48 @@ class TestSyncAll(unittest.TestCase):
         self.assertTrue(saved_data["finished_at"])
 
 
+    @patch("database.sync_all.sync_all_gameweeks")
+    @patch("database.sync_all.sync_league_memberships")
+    @patch("database.sync_all.create_tables")
+    def test_database_initialization_failure(
+        self,
+        mock_create_tables,
+        mock_memberships,
+        mock_gameweeks
+    ):
+        """Database failure must stop synchronization safely."""
+
+        mock_create_tables.side_effect = RuntimeError(
+            "Simulated database initialization failure"
+        )
+
+        output = io.StringIO()
+
+        with redirect_stdout(output):
+            sync_result = sync_all()
+
+        self.assertEqual(
+            sync_result,
+            {
+                "status": "failed",
+                "season": "2026/27",
+                "stage": "database",
+                "error": "Simulated database initialization failure"
+            }
+        )
+
+        self.assertIn(
+            "ERROR: Database initialization failed",
+            output.getvalue()
+        )
+
+        mock_create_tables.assert_called_once()
+        mock_memberships.assert_not_called()
+        mock_gameweeks.assert_not_called()
+
+        # The database may be unavailable, so logging is skipped.
+        self.mock_save_history.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()
