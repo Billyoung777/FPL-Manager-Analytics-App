@@ -48,8 +48,16 @@ def sync_gameweeks(manager_id, season, completed_gameweeks=None):
     # Save the entire gameweek batch atomically.
     connection = get_connection()
 
+
     try:
         for gw in gameweeks:
+
+            # Validate points before saving to SQLite.
+            if gw.get("points") is None:
+                raise ValueError(
+                    f"GW{gw['event']}: points cannot be None"
+                )
+
             save_gameweek_performance(
                 manager_id=manager_id,
                 season=season,
@@ -60,7 +68,6 @@ def sync_gameweeks(manager_id, season, completed_gameweeks=None):
                 connection=connection
             )
 
-        # Commit only after every gameweek succeeds.
         connection.commit()
 
     except Exception:

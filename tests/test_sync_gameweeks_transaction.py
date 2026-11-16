@@ -212,5 +212,41 @@ class TestSyncGameweeksTransaction(unittest.TestCase):
         self.assertEqual(history[1]["points"], 50)
 
 
+    @patch("database.sync_gameweeks.FPLClient")
+    def test_sync_rejects_missing_points_with_clear_error(
+        self,
+        mock_client_class
+    ):
+        mock_client = mock_client_class.return_value
+
+        mock_client.get.return_value = {
+            "current": [
+                {
+                    "event": 8,
+                    "points": None,
+                    "event_transfers_cost": 0,
+                    "total_points": 400
+                }
+            ]
+        }
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "GW8.*points"
+        ):
+            sync_gameweeks(
+                manager_id=1053858,
+                season="2026/27",
+                completed_gameweeks=[8]
+            )
+
+        history = get_manager_gameweeks(
+            1053858,
+            "2026/27"
+        )
+
+        self.assertEqual(history, [])
+
+
 if __name__ == "__main__":
     unittest.main()
