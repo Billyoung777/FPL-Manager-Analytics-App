@@ -51,12 +51,13 @@ def sync_gameweeks(manager_id, season, completed_gameweeks=None):
 
     try:
         for gw in gameweeks:
-
-            # Validate points before saving to SQLite.
-            if gw.get("points") is None:
+            # Points must be a genuine integer.
+            # Reject None, strings, floats and booleans.
+            if type(gw.get("points")) is not int:
                 raise ValueError(
-                    f"GW{gw['event']}: points cannot be None"
+                    f"GW{gw['event']}: points must be an integer"
                 )
+
 
             save_gameweek_performance(
                 manager_id=manager_id,
