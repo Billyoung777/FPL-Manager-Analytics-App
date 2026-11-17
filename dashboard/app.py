@@ -13,6 +13,7 @@ from database.league_member_service import synchronize_league_members
 from database.gameweek_repository import get_latest_gameweek_update
 from database.league_analytics import get_database_leaderboard
 from database.sync_history_repository import get_latest_sync
+from database.sync_freshness import calculate_sync_freshness
 from flask import (
     Flask,
     render_template,
@@ -487,7 +488,14 @@ def sync_health_api():
             "message": "No synchronization history found."
         }), 200
 
-    return jsonify(latest_sync), 200
+    freshness = calculate_sync_freshness(
+        latest_sync["finished_at"]
+    )
+
+    return jsonify({
+        **latest_sync,
+        **freshness
+    }), 200
 
 @app.route("/system-health")
 def system_health_page():

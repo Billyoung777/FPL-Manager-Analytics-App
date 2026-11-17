@@ -8,7 +8,9 @@ async function loadSyncHealth() {
         finished: document.getElementById("sync-finished"),
         stage: document.getElementById("sync-stage"),
         managerIds: document.getElementById("sync-manager-ids"),
-        error: document.getElementById("sync-error")
+        error: document.getElementById("sync-error"),
+        freshness: document.getElementById("sync-freshness"),
+        age: document.getElementById("sync-age")
     };
 
     try {
@@ -21,13 +23,24 @@ async function loadSyncHealth() {
 
         if (data.status === "not_synchronized") {
             fields.status.textContent = "Not synchronized";
-            fields.error.textContent =
-                "No synchronization history found.";
+            fields.error.textContent = "No synchronization history found.";
+            fields.freshness.textContent = "Unknown";
+            fields.age.textContent = "No synchronization recorded";
             return;
         }
 
         fields.status.textContent = data.status || "Unknown";
-        fields.successful.textContent =
+        fields.freshness.textContent =
+        data.freshness
+            ? data.freshness.charAt(0).toUpperCase() +
+            data.freshness.slice(1)
+            : "Unknown";
+
+        fields.age.textContent =
+            typeof data.age_hours === "number"
+                ? `${data.age_hours.toFixed(1)} hours since last sync`
+                : "Synchronization age unavailable";
+                fields.successful.textContent =
             data.successful_managers ?? "--";
         fields.failed.textContent =
             data.failed_managers ?? "--";
@@ -45,8 +58,9 @@ async function loadSyncHealth() {
 
     } catch (error) {
         fields.status.textContent = "Unavailable";
-        fields.error.textContent =
-            "Synchronization health is temporarily unavailable.";
+        fields.error.textContent = "Synchronization health is temporarily unavailable.";
+        fields.freshness.textContent = "Unavailable";
+        fields.age.textContent = "Unable to determine data freshness";
     }
 }
 

@@ -119,6 +119,69 @@ class TestDashboardSyncHealth(unittest.TestCase):
             b"System Health",
             response.data
         )
+    @patch("dashboard.app.get_latest_sync")
+    def test_api_includes_freshness(self, mock_latest):
+        from datetime import datetime, timedelta, timezone
+
+        finished_at = (
+            datetime.now(timezone.utc) - timedelta(hours=72)
+        ).isoformat()
+
+        mock_latest.return_value = {
+            "sync_id": 3,
+            "season": "2026/27",
+            "status": "success",
+            "successful_managers": 12,
+            "failed_managers": 0,
+            "started_at": finished_at,
+            "finished_at": finished_at,
+            "stage": None,
+            "error_message": None,
+            "failed_manager_ids": None
+        }
+
+        response = self.client.get("/api/sync/health")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json["freshness"], "stale")
+        self.assertGreaterEqual(
+            response.json["age_hours"], 72
+        )
+
+    @patch("dashboard.app.get_latest_sync")
+    def test_api_preserves_existing_sync_fields(self, mock_latest):
+        from datetime import datetime, timezone
+
+        timestamp = datetime.now(timezone.utc).isoformat()
+
+        mock_latest.return_value = {
+            "sync_id": 4,
+            "season": "2026/27",
+            "status": "success",
+            "successful_managers": 12,
+            "failed_managers": 0,
+            "started_at": timestamp,
+            "finished_at": timestamp,
+            "stage": None,
+            "error_message": None,
+            "failed_manager_ids": None
+        }
+
+        response = self.client.get("/api/sync/health")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json["status"], "success")
+        self.assertEqual(response.json["successful_managers"], 12)
+        self.assertEqual(response.json["freshness"], "fresh")
+        self.assertIn("age_hours", response.json)
+
+    def test_system_health_page_has_freshness_card(self):
+        response = self.client.get("/system-health")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Data Freshness", response.data)
+        self.assertIn(b'id="sync-freshness"', response.data)
+        self.assertIn(b'id="sync-age"', response.data)
 
 if __name__ == "__main__":
     unittest.main()
