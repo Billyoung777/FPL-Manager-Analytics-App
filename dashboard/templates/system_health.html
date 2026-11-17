@@ -12,6 +12,16 @@
         <p>Latest stored FPL database synchronization status.</p>
     </div>
 </header>
+<div class="sync-refresh-controls">
+    <button type="button" id="sync-refresh-button" class="sync-refresh-button">
+        Refresh Status
+    </button>
+
+    <span id="sync-last-checked">
+        Last checked: Not yet refreshed
+    </span>
+</div>
+
 
 <section class="stats-grid" aria-label="Synchronization summary">
     <article class="stat-card">
@@ -76,4 +86,5 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/sync_health.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/sync_history.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/sync_refresh.js') }}"></script>
 {% endblock %}

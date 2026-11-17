@@ -920,3 +920,76 @@ a:focus-visible {
 .sync-status-failed {
   color: #ef4444;
 }
+
+/* ==========================================
+   SYSTEM HEALTH - MANUAL REFRESH CONTROLS
+   ========================================== */
+
+.sync-refresh-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  margin-bottom: 24px;
+}
+
+.sync-refresh-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 10px 18px;
+  min-height: 40px;
+
+  background-color: #00d47e;
+  color: #08150f;
+
+  border: 1px solid #00d47e;
+  border-radius: 8px;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.sync-refresh-button:hover:not(:disabled) {
+  background-color: #00f090;
+  border-color: #00f090;
+}
+
+.sync-refresh-button:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 3px;
+}
+
+.sync-refresh-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+#sync-last-checked {
+  color: #a0abc0;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+@media (max-width: 600px) {
+  .sync-refresh-controls {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .sync-refresh-button {
+    width: 100%;
+  }
+}
