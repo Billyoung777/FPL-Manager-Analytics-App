@@ -107,3 +107,58 @@ def get_latest_sync():
 
     finally:
         connection.close()
+
+def get_recent_syncs(limit=10):
+    """
+    Retrieve recent synchronization records.
+
+    Records are returned newest first.
+    Failed manager IDs are decoded from JSON.
+    """
+
+    import json
+
+    if not isinstance(limit, int) or isinstance(limit, bool):
+        raise ValueError("limit must be an integer")
+
+    if not 1 <= limit <= 100:
+        raise ValueError("limit must be between 1 and 100")
+
+    connection = get_connection()
+
+    try:
+        connection.row_factory = sqlite3.Row
+
+        cursor = connection.execute("""
+            SELECT
+                sync_id,
+                season,
+                status,
+                successful_managers,
+                failed_managers,
+                started_at,
+                finished_at,
+                stage,
+                error_message,
+                failed_manager_ids
+            FROM sync_history
+            ORDER BY sync_id DESC
+            LIMIT ?
+        """, (limit,))
+
+        results = []
+
+        for record in cursor.fetchall():
+            result = dict(record)
+
+            if result["failed_manager_ids"] is not None:
+                result["failed_manager_ids"] = json.loads(
+                    result["failed_manager_ids"]
+                )
+
+            results.append(result)
+
+        return results
+
+    finally:
+        connection.close()

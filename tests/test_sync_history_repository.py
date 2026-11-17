@@ -3,12 +3,15 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-
 from database.sync_history_repository import (
     save_sync_history,
     get_latest_sync
 )
-
+from database.sync_history_repository import (
+    save_sync_history,
+    get_latest_sync,
+    get_recent_syncs
+)
 
 class TestSyncHistoryRepository(unittest.TestCase):
 
@@ -266,6 +269,147 @@ class TestSyncHistoryRepository(unittest.TestCase):
             self.assertEqual(latest["successful_managers"], 10)
             self.assertEqual(latest["failed_managers"], 2)
 
+
+    def test_get_recent_syncs_returns_newest_first(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            db_path = Path(temp_dir) / "test_fpl.db"
+
+            connection = sqlite3.connect(db_path)
+
+            try:
+                connection.execute("""
+                    CREATE TABLE sync_history (
+                        sync_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        season TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        successful_managers INTEGER DEFAULT 0,
+                        failed_managers INTEGER DEFAULT 0,
+                        started_at TEXT NOT NULL,
+                        finished_at TEXT NOT NULL,
+                        stage TEXT,
+                        error_message TEXT,
+                        failed_manager_ids TEXT
+                    )
+                """)
+
+                connection.executemany("""
+                    INSERT INTO sync_history (
+                        season, status,
+                        successful_managers, failed_managers,
+                        started_at, finished_at,
+                        stage, error_message, failed_manager_ids
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, [
+                    (
+                        "2026/27", "success", 12, 0,
+                        "2026-11-15 10:00:00",
+                        "2026-11-15 10:01:00",
+                        None, None, None
+                    ),
+                    (
+                        "2026/27", "partial", 10, 2,
+                        "2026-11-16 10:00:00",
+                        "2026-11-16 10:01:00",
+                        "gameweeks",
+                        "Two managers failed",
+                        "[953118, 1053858]"
+                    ),
+                    (
+                        "2026/27", "failed", 0, 12,
+                        "2026-11-17 10:00:00",
+                        "2026-11-17 10:01:00",
+                        "leagues",
+                        "League synchronization failed",
+                        "[]"
+                    )
+                ])
+
+                connection.commit()
+
+            finally:
+                connection.close()
+
+            def test_connection():
+                return sqlite3.connect(db_path)
+
+            with patch(
+                "database.sync_history_repository.get_connection",
+                side_effect=test_connection
+            ):
+                records = get_recent_syncs(limit=2)
+
+            self.assertEqual(len(records), 2)
+            self.assertEqual(records[0]["status"], "failed")
+            self.assertEqual(records[1]["status"], "partial")
+
+            self.assertEqual(
+                records[1]["failed_manager_ids"],
+                [953118, 1053858]
+            )
+
+            self.assertEqual(
+                records[0]["failed_manager_ids"],
+                []
+            )
+
+    def test_get_recent_syncs_when_empty(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            db_path = Path(temp_dir) / "test_fpl.db"
+
+            connection = sqlite3.connect(db_path)
+
+            try:
+                connection.execute("""
+                    CREATE TABLE sync_history (
+                        sync_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        season TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        successful_managers INTEGER DEFAULT 0,
+                        failed_managers INTEGER DEFAULT 0,
+                        started_at TEXT NOT NULL,
+                        finished_at TEXT NOT NULL,
+                        stage TEXT,
+                        error_message TEXT,
+                        failed_manager_ids TEXT
+                    )
+                """)
+                connection.commit()
+            finally:
+                connection.close()
+
+            def test_connection():
+                return sqlite3.connect(db_path)
+
+            with patch(
+                "database.sync_history_repository.get_connection",
+                side_effect=test_connection
+            ):
+                records = get_recent_syncs()
+
+            self.assertEqual(records, [])
+
+    def test_get_recent_syncs_rejects_invalid_limits(self):
+        invalid_limits = [
+            0,
+            -1,
+            101,
+            "10",
+            2.5,
+            True,
+            None
+        ]
+
+        with patch(
+            "database.sync_history_repository.get_connection"
+        ) as mock_connection:
+
+            for limit in invalid_limits:
+                with self.subTest(limit=limit):
+                    with self.assertRaises(ValueError):
+                        get_recent_syncs(limit=limit)
+
+            mock_connection.assert_not_called()
 
 if __name__ == "__main__":
     unittest.main()

@@ -871,3 +871,52 @@ a:focus-visible {
     grid-template-columns: 1fr
   }
 }
+
+/* Synchronization History */
+
+.sync-history-scroll {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 16px;
+}
+
+.sync-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+  font-size: 0.9rem;
+}
+
+.sync-history-table th,
+.sync-history-table td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  vertical-align: top;
+}
+
+.sync-history-table th {
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.sync-history-table tbody tr:hover {
+  background: rgba(148, 163, 184, 0.06);
+}
+
+.sync-status {
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.sync-status-success {
+  color: #22c55e;
+}
+
+.sync-status-partial {
+  color: #f59e0b;
+}
+
+.sync-status-failed {
+  color: #ef4444;
+}

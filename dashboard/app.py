@@ -12,7 +12,10 @@ from database.membership_repository import get_league_members
 from database.league_member_service import synchronize_league_members
 from database.gameweek_repository import get_latest_gameweek_update
 from database.league_analytics import get_database_leaderboard
-from database.sync_history_repository import get_latest_sync
+from database.sync_history_repository import (
+    get_latest_sync,
+    get_recent_syncs,
+)
 from database.sync_freshness import calculate_sync_freshness
 from flask import (
     Flask,
@@ -495,6 +498,39 @@ def sync_health_api():
     return jsonify({
         **latest_sync,
         **freshness
+    }), 200
+
+@app.route("/api/sync/history", methods=["GET"])
+def sync_history_api():
+    """Return recent stored synchronization records."""
+
+    raw_limit = request.args.get("limit", "10")
+
+    try:
+        limit = int(raw_limit)
+    except (TypeError, ValueError):
+        return jsonify({
+            "error": "limit must be an integer between 1 and 100"
+        }), 400
+
+    if not 1 <= limit <= 100:
+        return jsonify({
+            "error": "limit must be an integer between 1 and 100"
+        }), 400
+
+    try:
+        history = get_recent_syncs(limit=limit)
+    except Exception:
+        app.logger.exception(
+            "Unable to retrieve synchronization history"
+        )
+        return jsonify({
+            "error": "Synchronization history is temporarily unavailable"
+        }), 503
+
+    return jsonify({
+        "count": len(history),
+        "history": history
     }), 200
 
 @app.route("/system-health")

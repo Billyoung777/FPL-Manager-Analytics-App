@@ -46,8 +46,34 @@
     </p>
     <p id="sync-error" role="status"></p>
 </section>
+<section class="panel" aria-labelledby="sync-history-title">
+    <h2 id="sync-history-title">Synchronization History</h2>
+    <p>Recent FPL database synchronization attempts.</p>
+
+    <p id="sync-history-message" role="status">
+        Loading synchronization history...
+    </p>
+
+    <div class="sync-history-scroll">
+        <table class="sync-history-table" aria-label="Recent synchronizations">
+            <thead>
+                <tr>
+                    <th scope="col">Finished At</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Successful</th>
+                    <th scope="col">Failed</th>
+                    <th scope="col">Stage</th>
+                    <th scope="col">Details</th>
+                </tr>
+            </thead>
+            <tbody id="sync-history-body"></tbody>
+        </table>
+    </div>
+</section>
+
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/sync_health.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/sync_history.js') }}" defer></script>
 {% endblock %}
