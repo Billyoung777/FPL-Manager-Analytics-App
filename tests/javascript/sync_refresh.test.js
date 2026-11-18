@@ -43,9 +43,11 @@ test("Refresh Status reloads health and history", async () => {
         document,
         loadSyncHealth: async () => {
             calls.push("health");
+            return true;
         },
         loadSyncHistory: async () => {
             calls.push("history");
+            return true;
         }
     };
 
@@ -123,8 +125,8 @@ test("Refresh Status prevents duplicate requests", async () => {
     assert.equal(healthCalls, 1);
     assert.equal(historyCalls, 1);
 
-    finishHealth();
-    finishHistory();
+    finishHealth(true);
+    finishHistory(true);
 
     await firstRefresh;
 
@@ -182,3 +184,98 @@ test("Refresh Status restores button after a failed request", async () => {
         "Last checked: Refresh failed"
     );
 });
+
+const refreshScenarios = [
+    {
+        name: "Refresh Status succeeds when both loaders succeed",
+        health: true,
+        history: true,
+        shouldSucceed: true
+    },
+    {
+        name: "Refresh Status fails when health fails",
+        health: false,
+        history: true,
+        shouldSucceed: false
+    },
+    {
+        name: "Refresh Status fails when history fails",
+        health: true,
+        history: false,
+        shouldSucceed: false
+    },
+    {
+        name: "Refresh Status fails when both loaders fail",
+        health: false,
+        history: false,
+        shouldSucceed: false
+    }
+];
+
+for (const scenario of refreshScenarios) {
+    test(scenario.name, async () => {
+        const source = fs.readFileSync(scriptPath, "utf8");
+
+        const button = {
+            disabled: false,
+            textContent: "Refresh Status"
+        };
+
+        const lastChecked = {
+            textContent: "Last checked: Not yet refreshed"
+        };
+
+        let healthCalls = 0;
+        let historyCalls = 0;
+
+        const document = {
+            getElementById(id) {
+                if (id === "sync-last-checked") {
+                    return lastChecked;
+                }
+                return null;
+            },
+            addEventListener() {}
+        };
+
+        const context = {
+            document,
+            loadSyncHealth: async () => {
+                healthCalls++;
+                return scenario.health;
+            },
+            loadSyncHistory: async () => {
+                historyCalls++;
+                return scenario.history;
+            }
+        };
+
+        vm.runInNewContext(source, context);
+
+        await vm.runInNewContext(
+            "refreshSyncStatus(button)",
+            { ...context, button }
+        );
+
+        assert.equal(healthCalls, 1);
+        assert.equal(historyCalls, 1);
+
+        assert.equal(button.disabled, false);
+        assert.equal(
+            button.textContent,
+            "Refresh Status"
+        );
+
+        if (scenario.shouldSucceed) {
+            assert.match(
+                lastChecked.textContent,
+                /^Last checked: (?!Refresh failed$).+/
+            );
+        } else {
+            assert.equal(
+                lastChecked.textContent,
+                "Last checked: Refresh failed"
+            );
+        }
+    });
+}

@@ -13,10 +13,17 @@ async function refreshSyncStatus(button) {
     );
 
     try {
-        await Promise.all([
-            loadSyncHealth(),
-            loadSyncHistory()
-        ]);
+        const [healthSuccess, historySuccess] =
+            await Promise.all([
+                loadSyncHealth(),
+                loadSyncHistory()
+            ]);
+
+        if (healthSuccess !== true || historySuccess !== true) {
+            throw new Error(
+                "One or more synchronization status requests failed"
+            );
+        }
 
         if (lastChecked) {
             const now = new Date();
@@ -25,17 +32,18 @@ async function refreshSyncStatus(button) {
                 `Last checked: ${now.toLocaleTimeString()}`;
         }
 
-    } catch (error) {
-        if (lastChecked) {
-            lastChecked.textContent =
-                "Last checked: Refresh failed";
+        } catch (error) {
+            if (lastChecked) {
+                lastChecked.textContent =
+                    "Last checked: Refresh failed";
+            }
         }
 
-    } finally {
-        button.disabled = false;
-        button.textContent = "Refresh Status";
+        finally {
+            button.disabled = false;
+            button.textContent = "Refresh Status";
+        }
     }
-}
 
 
 function initializeSyncRefresh() {

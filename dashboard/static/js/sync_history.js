@@ -4,7 +4,7 @@ async function loadSyncHistory() {
     const message = document.getElementById("sync-history-message");
 
     if (!body || !message) {
-        return;
+        return false;
     }
 
     body.replaceChildren();
@@ -24,7 +24,7 @@ async function loadSyncHistory() {
 
         if (data.history.length === 0) {
             message.textContent = "No synchronization history found.";
-            return;
+            return true;
         }
 
         for (const record of data.history) {
@@ -59,11 +59,16 @@ async function loadSyncHistory() {
 
         message.textContent =
             `Showing ${data.history.length} synchronization record(s).`;
+            return true;
 
-    } catch (error) {
-        message.textContent =
-            "Synchronization history is temporarily unavailable.";
-    }
+        } catch (error) {
+            message.textContent =
+                "Synchronization history is temporarily unavailable.";
+
+            return false;
+        }
+
+        
 }
 
 document.addEventListener("DOMContentLoaded", loadSyncHistory);

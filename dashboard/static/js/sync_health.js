@@ -21,13 +21,17 @@ async function loadSyncHealth() {
 
         const data = await response.json();
 
+
+
         if (data.status === "not_synchronized") {
             fields.status.textContent = "Not synchronized";
             fields.error.textContent = "No synchronization history found.";
             fields.freshness.textContent = "Unknown";
             fields.age.textContent = "No synchronization recorded";
-            return;
+            return true;
         }
+
+
 
         fields.status.textContent = data.status || "Unknown";
         fields.freshness.textContent =
@@ -55,13 +59,20 @@ async function loadSyncHealth() {
                 : "None";
 
         fields.error.textContent = data.error_message || "";
+        return true;
 
-    } catch (error) {
-        fields.status.textContent = "Unavailable";
-        fields.error.textContent = "Synchronization health is temporarily unavailable.";
-        fields.freshness.textContent = "Unavailable";
-        fields.age.textContent = "Unable to determine data freshness";
-    }
+
+        } catch (error) {
+            fields.status.textContent = "Unavailable";
+            fields.error.textContent =
+                "Synchronization health is temporarily unavailable.";
+            fields.freshness.textContent = "Unavailable";
+            fields.age.textContent =
+                "Unable to determine data freshness";
+
+            return false;
+        }
+        
 }
 
 document.addEventListener("DOMContentLoaded", loadSyncHealth);
