@@ -91,5 +91,83 @@ class TestDashboardLeaderboard(unittest.TestCase):
         )
 
 
+    @patch("dashboard.app.synchronize_league_members")
+    @patch("dashboard.app.get_league_members")
+    def test_refresh_preserves_verified_mode(
+        self,
+        mock_members,
+        mock_sync
+    ):
+        mock_members.return_value = [
+            {"manager_id": 1}
+        ]
+
+        response = self.client.post(
+            "/league/100/refresh",
+            data={
+                "manager_id": "1",
+                "mode": "verified"
+            }
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(
+            "mode=verified",
+            response.headers["Location"]
+        )
+        self.assertIn(
+            "manager_id=1",
+            response.headers["Location"]
+        )
+        mock_sync.assert_called_once_with(100)
+
+    @patch("dashboard.app.synchronize_league_members")
+    @patch("dashboard.app.get_league_members")
+    def test_refresh_preserves_provisional_mode(
+        self,
+        mock_members,
+        mock_sync
+    ):
+        mock_members.return_value = [
+            {"manager_id": 1}
+        ]
+
+        response = self.client.post(
+            "/league/100/refresh",
+            data={
+                "manager_id": "1",
+                "mode": "provisional"
+            }
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(
+            "mode=provisional",
+            response.headers["Location"]
+        )
+        mock_sync.assert_called_once_with(100)
+
+    @patch("dashboard.app.synchronize_league_members")
+    @patch("dashboard.app.get_league_members")
+    def test_refresh_rejects_invalid_mode(
+        self,
+        mock_members,
+        mock_sync
+    ):
+        mock_members.return_value = [
+            {"manager_id": 1}
+        ]
+
+        response = self.client.post(
+            "/league/100/refresh",
+            data={
+                "manager_id": "1",
+                "mode": "invalid"
+            }
+        )
+
+        self.assertEqual(response.status_code, 400)
+        mock_sync.assert_not_called()
+
 if __name__ == "__main__":
     unittest.main()

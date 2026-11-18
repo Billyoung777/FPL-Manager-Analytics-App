@@ -103,6 +103,7 @@ def manager_hub():
         leagues=leagues
     )
 
+
 @app.route("/league/<int:league_id>/refresh", methods=["POST"])
 def refresh_league(league_id):
     manager_id = request.form.get("manager_id", type=int)
@@ -113,8 +114,15 @@ def refresh_league(league_id):
     if league_id <= 0:
         return "Invalid league ID", 400
 
-    # Confirm the selected manager belongs to this league
-    # before allowing a refresh.
+    leaderboard_mode = request.form.get(
+        "mode",
+        default="provisional"
+    )
+
+    if leaderboard_mode not in ("provisional", "verified"):
+        return "Invalid leaderboard mode", 400
+
+    # Confirm the manager belongs to this league.
     members = get_league_members(league_id)
 
     if not any(
@@ -125,8 +133,10 @@ def refresh_league(league_id):
 
     try:
         synchronize_league_members(league_id)
+
     except RuntimeError:
         return "Unable to synchronize league members", 502
+
     except (KeyError, TypeError, ValueError):
         return "Unexpected league standings data", 502
 
@@ -134,9 +144,11 @@ def refresh_league(league_id):
         url_for(
             "league_dashboard",
             league_id=league_id,
-            manager_id=manager_id
+            manager_id=manager_id,
+            mode=leaderboard_mode
         )
     )
+
 
 
 
