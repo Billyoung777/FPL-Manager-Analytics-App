@@ -83,6 +83,10 @@ class TestDashboardLeaderboard(unittest.TestCase):
         self.assertIn("120", html)
         self.assertIn("Team One", html)
         self.assertIn("106", html)
+        self.assertIn('href="/manager?id=2"', html)
+        self.assertIn('href="/manager?id=1"', html)
+        self.assertIn("Manager Two", html)
+        self.assertIn("Manager One", html)
 
         mock_leaderboard.assert_called_once_with(
             100,

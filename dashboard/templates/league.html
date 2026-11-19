@@ -94,7 +94,12 @@
                         <span class="pill">You</span>
                         {% endif %}
                     </td>
-                    <td>{{ entry.manager_name }}</td>
+                    <td>
+                        <a href="{{ url_for('manager_dashboard', id=entry.manager_id) }}" class="manager-analytics-link"
+                            title="View {{ entry.manager_name }} analytics">
+                            {{ entry.manager_name }}
+                        </a>
+                    </td>
                     <td>{{ entry.gameweeks }}</td>
                     <td>
                         {% set coverage = completeness.get(entry.manager_id, {}) %}
