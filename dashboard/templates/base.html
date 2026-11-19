@@ -34,12 +34,16 @@
             class="nav-icon">▥</span>Performance Analytics</a>
         <p class="nav-heading">COMPETE</p>
         <a class="nav-link {% if active_page == 'leagues' %}active{% endif %}"
-          href="{{ url_for('manager_hub', id=active_manager_id) if active_manager_id else url_for('home') }}"><span
-            class="nav-icon">♧</span>My Mini-Leagues</a>
+          href="{{ url_for('manager_hub', id=active_manager_id) if active_manager_id else url_for('home') }}">
+          <span class="nav-icon">♧</span>My Mini-Leagues
+        </a>
         <span class="nav-link disabled" aria-disabled="true"><span class="nav-icon">⇄</span>Compare Managers
           <small>Planned</small></span>
-        <span class="nav-link disabled" aria-disabled="true"><span class="nav-icon">♛</span>League Leaderboard
-          <small>Planned</small></span>
+        <a class="nav-link {% if active_page == 'league_leaderboard' %}active{% endif %}"
+          href="{{ url_for('manager_hub', id=active_manager_id) if active_manager_id else url_for('home') }}">
+          <span class="nav-icon">♛</span>League Leaderboard
+        </a>
+
         <p class="nav-heading">SYSTEM</p>
         <a class="nav-link {% if active_page == 'system_health' %}active{% endif %}"
           href="{{ url_for('system_health_page') }}">

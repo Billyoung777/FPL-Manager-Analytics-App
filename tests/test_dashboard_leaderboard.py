@@ -169,5 +169,36 @@ class TestDashboardLeaderboard(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         mock_sync.assert_not_called()
 
+    def test_league_navigation_uses_distinct_active_page(self):
+        from pathlib import Path
+
+        templates = (
+            Path(__file__).resolve().parents[1]
+            / "dashboard"
+            / "templates"
+        )
+
+        base = (templates / "base.html").read_text(
+            encoding="utf-8"
+        )
+        league = (templates / "league.html").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            "{% set active_page = 'league_leaderboard' %}",
+            league
+        )
+
+        self.assertIn(
+            "active_page == 'league_leaderboard'",
+            base
+        )
+
+        self.assertIn(
+            "active_page == 'leagues'",
+            base
+        )
+
 if __name__ == "__main__":
     unittest.main()
