@@ -70,6 +70,43 @@ def create_tables():
             )
         """)
 
+        # Store historical FPL squad selections.
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS manager_gameweek_picks (
+                manager_id INTEGER NOT NULL,
+                season TEXT NOT NULL,
+                gameweek INTEGER NOT NULL
+                    CHECK (gameweek BETWEEN 1 AND 38),
+                player_id INTEGER NOT NULL,
+                squad_position INTEGER NOT NULL
+                    CHECK (squad_position BETWEEN 1 AND 15),
+                multiplier INTEGER NOT NULL DEFAULT 1
+                    CHECK (multiplier >= 0),
+                is_captain INTEGER NOT NULL DEFAULT 0
+                    CHECK (is_captain IN (0, 1)),
+                is_vice_captain INTEGER NOT NULL DEFAULT 0
+                    CHECK (is_vice_captain IN (0, 1)),
+                last_updated TEXT DEFAULT CURRENT_TIMESTAMP,
+
+                PRIMARY KEY (
+                    manager_id,
+                    season,
+                    gameweek,
+                    squad_position
+                ),
+
+                UNIQUE (
+                    manager_id,
+                    season,
+                    gameweek,
+                    player_id
+                ),
+
+                FOREIGN KEY (manager_id)
+                    REFERENCES managers(manager_id)
+            )
+        """)
+
         # Upgrade existing sync_history tables without deleting records.
         existing_columns = {
             row[1]
