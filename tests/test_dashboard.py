@@ -71,7 +71,7 @@ class TestDashboard(unittest.TestCase):
             response = self.client.get("/manager?id=1053858")
 
         self.assertEqual(response.status_code, 200)
-        mock_sync.assert_called_once_with(1053858, "2026/27")
+        mock_sync.assert_not_called()
         connection.close.assert_called_once()
 
     def test_manager_selection(self):
@@ -213,6 +213,20 @@ class TestDashboard(unittest.TestCase):
 
         mock_connection.close.assert_called_once()
 
+    def test_unknown_manager_does_not_trigger_sync(self):
+        with patch(
+            "dashboard.app.get_manager",
+            return_value=None
+        ), patch(
+            "dashboard.app.sync_gameweeks"
+        ) as mock_sync:
+
+            response = self.client.get(
+                "/manager?id=999999999999"
+            )
+
+        self.assertEqual(response.status_code, 404)
+        mock_sync.assert_not_called()
 
 if __name__ == "__main__":
     unittest.main()

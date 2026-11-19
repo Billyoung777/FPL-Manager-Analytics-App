@@ -12,6 +12,7 @@ from database.membership_repository import get_league_members
 from database.league_member_service import synchronize_league_members
 from database.gameweek_repository import get_latest_gameweek_update
 from database.league_analytics import get_database_leaderboard
+from database.sync_gameweeks import sync_gameweeks
 from database.sync_history_repository import (
     get_latest_sync,
     get_recent_syncs,
@@ -170,7 +171,7 @@ def league_dashboard(league_id):
     league = get_league(league_id)
 
     if league is None:
-        return "League not found", 404
+        return redirect(url_for("home"))
 
     members = get_league_members(league_id)
 
@@ -276,8 +277,17 @@ def manager_dashboard():
     if manager_id <= 0:
         return "Invalid manager ID", 400
 
+    # Dashboard navigation is read-only.
+    manager = get_manager(manager_id)
+
+    if manager is None:
+        return "Manager not found", 404
+
     try:
-        sync_gameweeks(manager_id, "2026/27")
+        analytics = calculate_manager_analytics(
+            manager_id,
+            "2026/27"
+        )
 
     except ValueError as error:
         if get_manager(manager_id) is None:
