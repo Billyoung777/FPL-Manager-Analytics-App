@@ -152,3 +152,193 @@ def get_manager_picks(manager_id, season, gameweek):
         ]
     finally:
         connection.close()
+
+def get_squad_sync_status(manager_id, season, gameweek):
+    """
+    Return synchronization metadata for a manager's gameweek squad.
+
+    Returns None if no synchronization record exists.
+    """
+
+    connection = get_connection()
+
+    try:
+        row = connection.execute(
+            """
+            SELECT
+                is_final,
+                last_synced_at
+            FROM manager_squad_sync_status
+            WHERE manager_id = ?
+              AND season = ?
+              AND gameweek = ?
+            """,
+            (manager_id, season, gameweek)
+        ).fetchone()
+
+        if row is None:
+            return None
+
+        return {
+            "is_final": bool(row[0]),
+            "last_synced_at": row[1]
+        }
+
+    finally:
+        connection.close()
+
+def save_manager_picks_with_status(
+    manager_id,
+    season,
+    gameweek,
+    picks,
+    is_final,
+):
+    """
+    Atomically save a complete squad and its sync metadata.
+
+    Existing squad data is preserved if any operation fails.
+    """
+
+    if type(is_final) is not bool:
+        raise ValueError("is_final must be a boolean")
+
+    connection = get_connection()
+
+    try:
+        # Validate and stage changes without committing.
+        # Use a SAVEPOINT so both operations are atomic.
+        with connection:
+            connection.execute("SAVEPOINT squad_sync")
+
+            try:
+                # Validate using the existing repository logic,
+                # but avoid its separate database connection.
+                # Validation is performed before modifying records.
+                if type(manager_id) is not int or manager_id <= 0:
+                    raise ValueError("Invalid manager ID")
+
+                if type(gameweek) is not int or not 1 <= gameweek <= 38:
+                    raise ValueError("Invalid gameweek")
+
+                if not isinstance(season, str) or not season.strip():
+                    raise ValueError("Invalid season")
+
+                if not isinstance(picks, list) or len(picks) != 15:
+                    raise ValueError("A squad must contain exactly 15 picks")
+
+                positions = set()
+                player_ids = set()
+                captains = 0
+                vice_captains = 0
+
+                for pick in picks:
+                    if not isinstance(pick, dict):
+                        raise ValueError("Invalid pick data")
+
+                    player_id = pick.get("element")
+                    position = pick.get("position")
+                    multiplier = pick.get("multiplier")
+                    captain = pick.get("is_captain")
+                    vice = pick.get("is_vice_captain")
+
+                    if type(player_id) is not int or player_id <= 0:
+                        raise ValueError("Invalid player ID")
+
+                    if type(position) is not int or not 1 <= position <= 15:
+                        raise ValueError("Invalid squad position")
+
+                    if type(multiplier) is not int or multiplier < 0:
+                        raise ValueError("Invalid multiplier")
+
+                    if type(captain) is not bool or type(vice) is not bool:
+                        raise ValueError("Invalid captain flags")
+
+                    if captain and vice:
+                        raise ValueError("A player cannot hold both captain roles")
+
+                    if position in positions or player_id in player_ids:
+                        raise ValueError("Duplicate squad position or player")
+
+                    positions.add(position)
+                    player_ids.add(player_id)
+                    captains += captain
+                    vice_captains += vice
+
+                if positions != set(range(1, 16)):
+                    raise ValueError("Invalid squad positions")
+
+                if captains != 1 or vice_captains != 1:
+                    raise ValueError("Squad requires one captain and vice-captain")
+
+                connection.execute(
+                    """
+                    DELETE FROM manager_gameweek_picks
+                    WHERE manager_id = ?
+                      AND season = ?
+                      AND gameweek = ?
+                    """,
+                    (manager_id, season, gameweek),
+                )
+
+                connection.executemany(
+                    """
+                    INSERT INTO manager_gameweek_picks (
+                        manager_id,
+                        season,
+                        gameweek,
+                        player_id,
+                        squad_position,
+                        multiplier,
+                        is_captain,
+                        is_vice_captain
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    [
+                        (
+                            manager_id,
+                            season,
+                            gameweek,
+                            pick["element"],
+                            pick["position"],
+                            pick["multiplier"],
+                            int(pick["is_captain"]),
+                            int(pick["is_vice_captain"]),
+                        )
+                        for pick in picks
+                    ],
+                )
+
+                connection.execute(
+                    """
+                    INSERT INTO manager_squad_sync_status (
+                        manager_id,
+                        season,
+                        gameweek,
+                        is_final,
+                        last_synced_at
+                    )
+                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(manager_id, season, gameweek)
+                    DO UPDATE SET
+                        is_final = excluded.is_final,
+                        last_synced_at = CURRENT_TIMESTAMP
+                    """,
+                    (
+                        manager_id,
+                        season,
+                        gameweek,
+                        int(is_final),
+                    ),
+                )
+
+                connection.execute("RELEASE SAVEPOINT squad_sync")
+
+            except Exception:
+                connection.execute("ROLLBACK TO SAVEPOINT squad_sync")
+                connection.execute("RELEASE SAVEPOINT squad_sync")
+                raise
+
+    finally:
+        connection.close()

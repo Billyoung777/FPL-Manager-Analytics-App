@@ -107,6 +107,29 @@ def create_tables():
             )
         """)
 
+        # Track synchronization and finalization of historical squads.
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS manager_squad_sync_status (
+                manager_id INTEGER NOT NULL,
+                season TEXT NOT NULL,
+                gameweek INTEGER NOT NULL
+                    CHECK (gameweek BETWEEN 1 AND 38),
+                is_final INTEGER NOT NULL DEFAULT 0
+                    CHECK (is_final IN (0, 1)),
+                last_synced_at TEXT NOT NULL
+                    DEFAULT CURRENT_TIMESTAMP,
+
+                PRIMARY KEY (
+                    manager_id,
+                    season,
+                    gameweek
+                ),
+
+                FOREIGN KEY (manager_id)
+                    REFERENCES managers(manager_id)
+            )
+        """)
+
         # Upgrade existing sync_history tables without deleting records.
         existing_columns = {
             row[1]

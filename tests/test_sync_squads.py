@@ -1,4 +1,4 @@
-
+﻿
 import unittest
 from unittest.mock import Mock, patch
 
@@ -42,7 +42,7 @@ class TestSquadSynchronization(unittest.TestCase):
             "picks": self.picks
         }
 
-    @patch("database.sync_squads.save_manager_picks")
+    @patch("database.sync_squads.save_manager_picks_with_status")
     @patch("database.sync_squads.get_manager_picks")
     def test_new_squad_is_saved(self, mock_get, mock_save):
         mock_get.return_value = []
@@ -65,10 +65,11 @@ class TestSquadSynchronization(unittest.TestCase):
             self.season,
             self.gameweek,
             self.picks,
+            True,
         )
 
 
-    @patch("database.sync_squads.save_manager_picks")
+    @patch("database.sync_squads.save_manager_picks_with_status")
     @patch("database.sync_squads.get_manager_picks")
     def test_force_refreshes_cached_squad(self, mock_get, mock_save):
         mock_get.return_value = self.picks
@@ -84,9 +85,15 @@ class TestSquadSynchronization(unittest.TestCase):
         self.client.get_manager_picks.assert_called_once()
         mock_save.assert_called_once()
 
-    @patch("database.sync_squads.save_manager_picks")
+    @patch(
+        "database.sync_squads.get_squad_sync_status",
+        return_value=None,
+    )
+    @patch("database.sync_squads.save_manager_picks_with_status")
     @patch("database.sync_squads.get_manager_picks")
-    def test_provisional_squad_refreshes(self, mock_get, mock_save):
+    def test_provisional_squad_refreshes(
+        self, mock_get, mock_save, mock_status
+    ):
         mock_get.return_value = self.picks
         self.client.get_players.return_value["events"][0].update({
             "data_checked": False,
@@ -102,9 +109,16 @@ class TestSquadSynchronization(unittest.TestCase):
 
         self.assertEqual(result["status"], "updated")
         self.assertFalse(result["is_final"])
-        mock_save.assert_called_once()
+        mock_save.assert_called_once_with(
+            self.manager_id,
+            self.season,
+            self.gameweek,
+            self.picks,
+            False,
+        )
+        mock_status.assert_not_called()
 
-    @patch("database.sync_squads.save_manager_picks")
+    @patch("database.sync_squads.save_manager_picks_with_status")
     @patch("database.sync_squads.get_manager_picks")
     def test_future_gameweek_is_rejected(self, mock_get, mock_save):
         mock_get.return_value = []
@@ -124,7 +138,7 @@ class TestSquadSynchronization(unittest.TestCase):
         self.client.get_manager_picks.assert_not_called()
         mock_save.assert_not_called()
 
-    @patch("database.sync_squads.save_manager_picks")
+    @patch("database.sync_squads.save_manager_picks_with_status")
     @patch("database.sync_squads.get_manager_picks")
     def test_api_failure_does_not_save(self, mock_get, mock_save):
         mock_get.return_value = []
@@ -141,7 +155,7 @@ class TestSquadSynchronization(unittest.TestCase):
 
         mock_save.assert_not_called()
 
-    @patch("database.sync_squads.save_manager_picks")
+    @patch("database.sync_squads.save_manager_picks_with_status")
     @patch("database.sync_squads.get_manager_picks")
     def test_incomplete_picks_are_rejected(self, mock_get, mock_save):
         mock_get.return_value = []
@@ -158,7 +172,7 @@ class TestSquadSynchronization(unittest.TestCase):
 
         mock_save.assert_not_called()
 
-    @patch("database.sync_squads.save_manager_picks")
+    @patch("database.sync_squads.save_manager_picks_with_status")
     @patch("database.sync_squads.get_manager_picks")
     def test_unknown_gameweek_is_rejected(self, mock_get, mock_save):
         self.client.get_players.return_value = {"events": []}
@@ -194,7 +208,7 @@ class TestSquadSynchronization(unittest.TestCase):
         self.client.get_players.assert_not_called()
 
 
-    @patch("database.sync_squads.save_manager_picks")
+    @patch("database.sync_squads.save_manager_picks_with_status")
     @patch("database.sync_squads.get_manager_picks", create=True)
     def test_finalized_squad_refreshes_without_cache_metadata(
         self, mock_get, mock_save
@@ -212,6 +226,77 @@ class TestSquadSynchronization(unittest.TestCase):
         )
         mock_save.assert_called_once()
         mock_get.assert_not_called()
+
+
+    @patch("database.sync_squads.save_manager_picks_with_status")
+    @patch("database.sync_squads.get_manager_picks")
+    @patch("database.sync_squads.get_squad_sync_status")
+    def test_finalized_squad_uses_cache(
+        self, mock_status, mock_get, mock_save
+    ):
+        mock_status.return_value = {
+            "is_final": True,
+            "last_synced_at": "2026-11-20 09:00:00",
+        }
+        mock_get.return_value = self.picks
+
+        result = sync_manager_squad(
+            self.manager_id,
+            self.gameweek,
+            client=self.client,
+        )
+
+        self.assertEqual(result["status"], "cached")
+        self.assertTrue(result["is_final"])
+        self.assertEqual(result["picks"], self.picks)
+
+        mock_status.assert_called_once_with(
+            self.manager_id,
+            self.season,
+            self.gameweek,
+        )
+        mock_get.assert_called_once_with(
+            self.manager_id,
+            self.season,
+            self.gameweek,
+        )
+
+        self.client.get_manager_picks.assert_not_called()
+        mock_save.assert_not_called()
+
+    @patch("database.sync_squads.save_manager_picks_with_status")
+    @patch("database.sync_squads.get_manager_picks")
+    @patch("database.sync_squads.get_squad_sync_status")
+    def test_incomplete_finalized_cache_is_refreshed(
+        self, mock_status, mock_get, mock_save
+    ):
+        mock_status.return_value = {
+            "is_final": True,
+            "last_synced_at": "2026-11-20 09:00:00",
+        }
+        mock_get.return_value = self.picks[:14]
+
+        result = sync_manager_squad(
+            self.manager_id,
+            self.gameweek,
+            client=self.client,
+        )
+
+        self.assertEqual(result["status"], "updated")
+        self.assertTrue(result["is_final"])
+        self.assertEqual(len(result["picks"]), 15)
+
+        self.client.get_manager_picks.assert_called_once_with(
+            self.manager_id,
+            self.gameweek,
+        )
+        mock_save.assert_called_once_with(
+            self.manager_id,
+            self.season,
+            self.gameweek,
+            self.picks,
+            True,
+        )
 
 if __name__ == "__main__":
     unittest.main()

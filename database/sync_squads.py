@@ -1,14 +1,11 @@
-
 from api.fpl_client import FPLClient
-from database.squad_repository import save_manager_picks
 from database.squad_repository import (
     get_manager_picks,
-    save_manager_picks,
+    get_squad_sync_status,
+    save_manager_picks_with_status,
 )
 
-
 SEASON = "2026/27"
-
 
 def sync_manager_squad(
     manager_id,
@@ -62,6 +59,26 @@ def sync_manager_squad(
         raise ValueError(
             "Squad picks are not available before the gameweek deadline"
         )
+    # Only finalized, complete squads are eligible for caching.
+    if is_final and not force:
+        status = get_squad_sync_status(
+            manager_id, season, gameweek
+        )
+
+        if status is not None and status["is_final"]:
+            cached_picks = get_manager_picks(
+                manager_id, season, gameweek
+            )
+
+            if len(cached_picks) == 15:
+                return {
+                    "manager_id": manager_id,
+                    "season": season,
+                    "gameweek": gameweek,
+                    "status": "cached",
+                    "is_final": True,
+                    "picks": cached_picks,
+                }
 
     response = client.get_manager_picks(
         manager_id,
@@ -78,11 +95,12 @@ def sync_manager_squad(
             "FPL response must contain exactly 15 squad picks"
         )
 
-    save_manager_picks(
+    save_manager_picks_with_status(
         manager_id,
         season,
         gameweek,
         picks,
+        is_final,
     )
 
     return {
